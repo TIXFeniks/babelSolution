@@ -5,3 +5,5 @@
 
 
 THEANO_FLAGS=device=cpu python translate.py /tmp/"${1##*/}".bpe 
+
+mv ./output/output.txt /output/output.txt
