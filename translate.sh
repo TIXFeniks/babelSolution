@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-./preprocess.sh input/input.txt input/ en de
+./preprocess.sh $1 /tmp en de
 
 
-THEANO_FLAGS=device=cpu python translate.py
+THEANO_FLAGS=device=cpu python translate.py /tmp/"${1##*/}".bpe 
