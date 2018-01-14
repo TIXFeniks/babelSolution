@@ -8,16 +8,10 @@ SRC=$3
 TRG=$4
 
 # path to moses decoder: https://github.com/moses-smt/mosesdecoder
-mosesdecoder=lib/mosesdecoder
+mosesdecoder=/path/to/mosesdecoder
 
 # path to subword segmentation scripts: https://github.com/rsennrich/subword-nmt
-subword_nmt=lib/subword-nmt
-
-# path to nematus ( https://www.github.com/rsennrich/nematus )
-nematus=lib/nematus
-
-# theano device
-device=cpu
+subword_nmt=/path/to/subword-nmt
 
 # preprocess
 cat $1 | \
