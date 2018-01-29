@@ -26,7 +26,7 @@ done
 echo 'transforming'
 for lang in 1 2
 do
-    for corp in parallel, corpus
+    for corp in parallel corpus
 	do 
 		echo 'transforming $corp $lang'
 		cat $data/$corp$lang.txt | \
