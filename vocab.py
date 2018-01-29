@@ -7,7 +7,7 @@ class Vocab:
     _default_tokens = [ "__BOS__","__EOS__", "__PAD__"]
     
     def __init__(self, voc_path= None, sentences= None):
-        self.tokens = self._default_tokens
+        self.tokens = self._default_tokens + [] # don't change default tokens
         if voc_path is not None:
             self.update_tokens_with_vocab(voc_path)
         if sentences is not None:
@@ -15,23 +15,29 @@ class Vocab:
         self.BOS = 0 # BOS should be zero to let the model generate starting with zero as an input
         self.EOS = 1
         self.PAD = 2
-        self.len = len(self.tokens)
-        self.token2id = {token: i for i, token in enumerate(self.tokens)}
+    
+    @property
+    def token2id(self):
+        return {token: i for i, token in enumerate(self.tokens)}
+    
+    def add_token_set(self, tokens):
+        tokens.difference_update(self.tokens)
+        self.tokens = self.tokens + list(tokens)
     
     def update_tokens_with_vocab(self, voc_path):
-        tokens = set(self.tokens[len(self._default_tokens):])
+        tokens = set()
         with open(voc_path,'r') as f:
-            i = 0
             for line in f:
-                i += 1
                 token = line.split(" ")[0]
                 tokens.update([token])
-        self.tokens = self._default_tokens + list(tokens)
+        self.add_token_set(tokens)
+        
     def update_tokens_with_sequences(self, sentences):
-        tokens = set(self.tokens[3:])
+        tokens = set()
         for s in sentences:
             tokens.update(s.split(' '))
-        self.tokens = self._default_tokens + list(tokens)
+            
+        self.add_token_set(tokens)
     
     def tokenize(self, sentence):
         if not sentence.endswith("__EOS__"):
