@@ -1,4 +1,5 @@
 import numpy as np
+from sortedcontainers import SortedSet
 
 unknowns = []
 
@@ -25,7 +26,7 @@ class Vocab:
         self.tokens = self.tokens + list(tokens)
     
     def update_tokens_with_vocab(self, voc_path):
-        tokens = set()
+        tokens = SortedSet()
         with open(voc_path,'r') as f:
             for line in f:
                 token = line.split(" ")[0]
@@ -33,7 +34,7 @@ class Vocab:
         self.add_token_set(tokens)
         
     def update_tokens_with_sequences(self, sentences):
-        tokens = set()
+        tokens = SortedSet()
         for s in sentences:
             tokens.update(s.split(' '))
             
