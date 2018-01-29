@@ -1,4 +1,5 @@
 import numpy as np
+import tfnn.task.seq2seq.voc
 
 
 class Vocab:
@@ -25,6 +26,9 @@ class Vocab:
 
     def __len__(self):
         return len(self.tokens)
+
+    def __contains__(self, item):
+        return item in self.token2id
 
     def tokenize(self, sentence, separator=' '):
         """ Converts sentence into a sequence of ids """
@@ -97,7 +101,7 @@ class Vocab:
                 token = line.split(" ")[0]
                 tokens.update([token])
 
-        return Vocab(list(cls._default_tokens) + list(tokens))
+        return Vocab(list(cls._default_tokens) + sorted(tokens))
 
     @classmethod
     def from_sequences(cls, sentences, separator=' '):
@@ -108,13 +112,42 @@ class Vocab:
         return Vocab(list(cls._default_tokens) + sorted(tokens))
 
     @classmethod
-    def merge(cls, *vocabs):
-        for vocab in vocabs:
+    def merge(cls, first, *others):
+        """
+        Constructs vocab out of several different vocabulatries.
+        Maintains existing token ids by first vocab
+        """
+        for vocab in (first,) + others:
             assert isinstance(vocab, Vocab)
 
-        # all tokens excluding special
-        tokens = {token for vocab in vocabs
-                  for token in vocab.tokens
-                  if token not in cls._default_tokens}
+        # get all tokens from others that are not in first
+        other_tokens = set()
+        for vocab in others:
+            other_tokens.update(set(vocab.tokens))
 
-        return Vocab(list(cls._default_tokens) + sorted(tokens))
+        # inplace substract first.tokens from other_tokens
+        other_tokens.difference_update(set(first.tokens))
+
+        return Vocab(first.tokens + tuple(other_tokens))
+
+
+class VocAdapter(tfnn.task.seq2seq.voc.Voc):
+    def __init__(self, vocab):
+        self._vocab = vocab
+
+    @property
+    def bos(self):
+        return self._vocab.BOS
+
+    @property
+    def eos(self):
+        return self._vocab.EOS
+
+    def ids(self, words):
+        return self._vocab.tokenize(words)
+
+    def words(self, ids):
+        return self._vocab.detokenize(ids, sep=None)
+
+    def size(self):
+        return len(self._vocab)
