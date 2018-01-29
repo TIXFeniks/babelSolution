@@ -9,6 +9,7 @@ class Vocab:
     
     def __init__(self, voc_path= None, sentences= None):
         self.tokens = self._default_tokens + [] # don't change default tokens
+        self.token2id = {token: i for i, token in enumerate(self.tokens)}
         if voc_path is not None:
             self.update_tokens_with_vocab(voc_path)
         if sentences is not None:
@@ -17,13 +18,16 @@ class Vocab:
         self.EOS = 1
         self.PAD = 2
     
-    @property
-    def token2id(self):
-        return {token: i for i, token in enumerate(self.tokens)}
-    
     def add_token_set(self, tokens):
+        tokens = SortedSet(tokens)
         tokens.difference_update(self.tokens)
-        self.tokens = self.tokens + list(tokens)
+        tokens = list(tokens)
+        
+        l = len(self.tokens)
+        
+        for i, token in enumerate(tokens):
+            self.token2id[token] = i + l
+        self.tokens = self.tokens + tokens
     
     def update_tokens_with_vocab(self, voc_path):
         tokens = SortedSet()
