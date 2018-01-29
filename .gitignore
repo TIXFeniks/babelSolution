@@ -1,4 +1,5 @@
-lib/*
-data/*
+lib/
+data/
+models/
 *.pyc
 __*
