@@ -1,6 +1,4 @@
 import numpy as np
-import tfnn.task.seq2seq.voc
-
 
 class Vocab:
     """
