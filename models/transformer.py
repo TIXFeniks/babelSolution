@@ -12,7 +12,6 @@ class Transformer:
         self.name = name
         self.inp_voc = inp_voc
         self.out_voc = out_voc
-        self.emb_size = self.hid_size = hid_size
         self.hp = hp
         hp['force_bos'] = hp.get('force_bos', True)
 
@@ -67,8 +66,8 @@ class Transformer:
 
             offset = tf.zeros((batch_size,))
 
-            empty_emb = tf.zeros([batch_size, 0, self.emb_size])
-            empty_dec_layers = [tf.zeros([batch_size, 0, self.hid_size])] * self.dec.num_layers
+            empty_emb = tf.zeros([batch_size, 0, self.enc.emb_size])
+            empty_dec_layers = [tf.zeros([batch_size, 0, self.dec.hid_size])] * self.dec.num_layers
             input_layers = [empty_emb] + empty_dec_layers[:-1]
 
             # prepare kv parts for all decoder attention layers. Note: we do not preprocess enc_out
@@ -106,7 +105,7 @@ class Transformer:
             # Embeddings
             if words is None:
                 # initial step: words are None
-                emb_out = tf.zeros((batch_size, 1, self.emb_size))
+                emb_out = tf.zeros((batch_size, 1, self.dec.emb_size))
             else:
                 emb_out = self.dec.emb_out(words[:, None])  # [batch_size * 1 * emb_dim]
                 if self.dec.rescale_emb:
@@ -126,7 +125,7 @@ class Transformer:
             # Decoder
             new_emb = tf.concat([prev_emb, dec_inp_t], axis=1)
             _out = tf.pad(out_seq, [(0, 0), (0, 1)])
-            dec_attn_mask = make_attn_mask(_out, self.out_voc.eos, allow_lookahead=False)[:, :, -1:, :]  # [1, 1, n_q=1, n_kv]
+            dec_attn_mask = make_attn_mask(_out, self.out_voc.eos, allow_lookahead=False)[:, :, -1:, :]
 
             new_dec_layers = []
             new_dec_dec_kv = []
@@ -139,7 +138,7 @@ class Transformer:
                 dec_inp_t = self.dec.dec_attn[layer](dec_inp_t, dec_attn_mask, kv=new_dec_dec_kv[layer])
 
                 dec_inp_t = self.dec.dec_enc_attn[layer](dec_inp_t, enc_attn_mask, kv=dec_enc_kv[layer])
-                dec_inp_t = self.dec.dec_ffn[layer](dec_inp_t, params_summary=self.dec._params_summary)
+                dec_inp_t = self.dec.dec_ffn[layer](dec_inp_t)
 
                 new_dec_inp = tf.concat([prev_dec_layers[layer], dec_inp_t], axis=1)
                 new_dec_layers.append(new_dec_inp)
