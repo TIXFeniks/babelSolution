@@ -23,7 +23,7 @@ class Transformer:
             if hp.get('dwwt', False):
                 projection_matrix = tf.transpose(self.dec.emb_out.mat)
 
-            self.logits = Dense('logits', hid_size, out_voc.size(),
+            self.logits = Dense('logits', hid_size, len(out_voc),
                                 activaction=nop, W=projection_matrix)
 
     def symbolic_score(self, inp, out, is_train=False):

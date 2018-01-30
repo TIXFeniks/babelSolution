@@ -45,8 +45,8 @@ class AttentiveTranslationModel:
         :param inp: matrix of input tokens [batch, time]
         :return: a list of initial decoder state tensors
         """
-        inp_lengths = infer_length(inp, self.inp_voc.EOS)
-        enc_mask = infer_mask(inp, self.inp_voc.EOS)
+        inp_lengths = infer_length(inp, self.inp_voc.eos)
+        enc_mask = infer_mask(inp, self.inp_voc.eos)
         inp_emb = self.emb_inp(inp)
 
         enc_seq, enc_last = tf.nn.dynamic_rnn(
@@ -101,7 +101,7 @@ class AttentiveTranslationModel:
         first_state = self.encode(inp, **flags)
 
         batch_size = tf.shape(inp)[0]
-        bos = tf.fill([batch_size], self.out_voc.BOS)
+        bos = tf.fill([batch_size], self.out_voc.bos)
         first_logits = tf.log(tf.one_hot(bos, len(self.out_voc)) + eps)
 
         def step(blob, y_prev):
@@ -145,7 +145,7 @@ class AttentiveTranslationModel:
         first_state = self.encode(inp, **flags)
 
         batch_size = tf.shape(inp)[0]
-        bos = tf.fill([batch_size], self.out_voc.BOS)
+        bos = tf.fill([batch_size], self.out_voc.bos)
         first_logits = tf.log(tf.one_hot(bos, len(self.out_voc)) + eps)
         max_len = tf.reduce_max(tf.shape(inp)[1]) * 2
 
