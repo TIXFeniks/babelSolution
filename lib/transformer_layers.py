@@ -134,6 +134,7 @@ class TransformerDecoder:
             res_steps='nlda',
             normalize_out=False,
             rescale_emb=False,
+            shift_right=False,
             dropout=0.,
             **_kwargs
     ):
@@ -150,7 +151,9 @@ class TransformerDecoder:
         self.out_voc = out_voc
         self.num_layers = num_layers_dec
         self.emb_size = self.hid_size = hid_size
+        self.shift_right = shift_right
         self.ff_size = ff_size = ff_size or hid_size
+
 
         with tf.variable_scope(name):
             if self.out_voc is not None:
@@ -226,6 +229,10 @@ class TransformerDecoder:
 
         assert dec_inp.shape.ndims == 3, "input must have shape [batch, time, units]"
         assert dec_attn_mask.shape.ndims == 4, "attn_mask must have shape [batch, 1, from_time, to_time]"
+
+        if self.shift_right:
+            # Shift right; drop embedding for last word
+            dec_inp = tf.pad(dec_inp, [[0, 0], [1, 0], [0, 0]])[:, :-1, :]
 
         with dropout_scope(is_train), tf.name_scope(self.name + '_dec'):
             dec_inp = add_timing_signal(dec_inp)
