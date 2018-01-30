@@ -1,5 +1,6 @@
 from lib.layers import *
 from lib.tensor_utils import *
+from lib.inference import BeamSearchInference, GreedyInference
 from lib.transformer_layers import TransformerEncoder, TransformerDecoder,\
                                    add_timing_signal, make_attn_mask
 from collections import namedtuple
@@ -38,7 +39,7 @@ class Transformer(TranslateModel):
         dec_out, dec_attn_mask = self.dec(enc_out, out, enc_attn_mask, is_train=is_train)
 
         logits = self.logits(dec_out)
-        return tf.nn.log_softmax(logits)
+        return logits
 
     # Translation code
 
@@ -163,5 +164,36 @@ class Transformer(TranslateModel):
     def get_attnP(self, dec_state):
         return dec_state.attnP
 
-    def symbolic_translate(self, inp, out, is_train=False):
-        raise NotImplementedError("TODO(jheuristic) finish merging")
+    def symbolic_translate(self, inp, mode='beam_search', **flags):
+        """
+        A function that takes a symbolic input tokens and returns symolic translations
+        :param inp: input tokens, int32[batch, time]
+        :param mode: 'greedy', 'sample', or 'beam_search'
+        :param flags: anything else you want to pass to decoder, encode, decode, sample, etc.
+        :return: a class with .best_out, .best_scores containing symbolic tensors for translations
+        """
+        batch_placeholder = {'inp': inp}
+        assert mode in ('greedy', 'sample', 'beam_search', 'beam_search_old')
+
+        # create default flags
+        beam_search_flags_in_hp = ['beam_size', 'beam_spread', 'len_alpha', 'attn_beta']
+        for flag in beam_search_flags_in_hp:
+            if flag in self.hp and flag not in flags:
+                flags[flag] = self.hp[flag]
+        flags['sampling_strategy'] = 'sample' if mode == 'sample' else 'greedy'
+
+        if mode in ('greedy', 'sample'):
+            return GreedyInference(
+                model=self,
+                batch_placeholder=batch_placeholder,
+                sampling_strategy='best' if mode == 'greedy' else 'sample',
+                force_bos=self.hp.get('force_bos', False),
+                **flags)
+
+        elif mode == 'beam_search':
+            return BeamSearchInference(
+                model=self.get_translate_model(),
+                batch_placeholder=batch_placeholder,
+                force_bos=self.hp.get('force_bos', False),
+                **flags
+            )
