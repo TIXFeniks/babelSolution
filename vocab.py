@@ -1,4 +1,6 @@
 import numpy as np
+import tfnn.task.seq2seq.voc
+
 
 class Vocab:
     """
@@ -8,9 +10,10 @@ class Vocab:
     Here's a tour to what it does: http://bit.ly/2BDupuH
     """
     _default_tokens = ("__BOS__", "__EOS__", "__UNK__")
+
     @staticmethod
     def remove_bpe(s):
-        return s.replace('@@ ', '').replace("&apos;", "'").replace(" '", "'") # TODO: make this generic
+        return s.replace('@@ ', '').replace("&apos;", "'").replace(" '", "'")  # TODO: make this generic
 
     def __init__(self, tokens):
         tokens = tuple(tokens)
