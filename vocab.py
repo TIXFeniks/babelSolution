@@ -8,21 +8,22 @@ class Vocab:
     Here's a tour to what it does: http://bit.ly/2BDupuH
     """
     _default_tokens = ("__BOS__", "__EOS__", "__UNK__")
+
     @staticmethod
     def remove_bpe(s):
-        return s.replace('@@ ', '').replace("&apos;", "'").replace(" '", "'") # TODO: make this generic
+        return s.replace('@@ ', '').replace("&apos;", "'").replace(" '", "'")  # TODO: make this generic
 
     def __init__(self, tokens):
         tokens = tuple(tokens)
         assert len(tokens) == len(set(tokens)), "tokens must be unique"
         for i, t in enumerate(self._default_tokens):
-            assert t in tokens and tokens.index(t) == i, "token must have %s at index %i" % (t,i)
+            assert t in tokens and tokens.index(t) == i, "token must have %s at index %i" % (t, i)
 
         self.tokens = tokens
         self.token2id = {token: i for i, token in enumerate(self.tokens)}
-        self.BOS = 0
-        self.EOS = 1
-        self.UNK = 2
+        self.bos = 0
+        self.eos = 1
+        self.unk = 2
 
     def __len__(self):
         return len(self.tokens)
@@ -41,13 +42,13 @@ class Vocab:
         if sentence[0] != "__BOS__":
             sentence.insert(0, "__BOS__")
 
-        return [self.token2id.get(token, self.UNK) for token in sentence]
+        return [self.token2id.get(token, self.unk) for token in sentence]
 
     def detokenize(self, indices, crop=True, sep=' ', unbpe=False, deprocess=False):
         """ converts indices to words. If separator is not None, joins them over it """
         indices = tuple(indices)
-        if self.EOS in indices:
-            indices = indices[:indices.index(self.EOS) + 1]
+        if self.eos in indices:
+            indices = indices[:indices.index(self.eos) + 1]
 
         tokens = [self.tokens[token] for token in indices]
         if deprocess:
@@ -66,6 +67,8 @@ class Vocab:
         convert variable length token sequences into fixed size matrix
         pads short sequences with self.EOS
         example usage:
+        >>>sentences = ... # a list of strings
+        >>>vocab = Vocab.from_sequences(sentences)
         >>>print(vocab.tokenize_many(sentences[:3]))
         [[15 22 21 28 27 13  1  1  1  1  1]
          [30 21 15 15 21 14 28 27 13  1  1]
@@ -73,7 +76,7 @@ class Vocab:
         """
         max_len = max_len or max(map(lambda s: len(s.split(sep)), lines)) + 2  # 2 for bos and eos
 
-        matrix = np.zeros((len(lines), max_len), dtype='int32') + self.EOS
+        matrix = np.zeros((len(lines), max_len), dtype='int32') + self.eos
         for i, seq in enumerate(lines):
             tokens = self.tokenize(seq)[:max_len]
             matrix[i, :len(tokens)] = tokens
