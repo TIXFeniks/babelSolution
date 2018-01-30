@@ -87,7 +87,7 @@ class AttentiveTranslationModel:
 
         return [new_cell, new_hid, enc_seq, enc_mask, attn_probas], output_logits
 
-    def symbolic_score(self, inp, out, eps=1e-30, return_state=False, **flags):
+    def symbolic_score(self, inp, out, eps=1e-30, return_state=False, crop_last=True, **flags):
         """
         Takes symbolic int32 matrices of hebrew words and their english translations.
         Computes the log-probabilities of all possible english characters given english prefices and hebrew word.
@@ -126,6 +126,11 @@ class AttentiveTranslationModel:
                       for states in states_seq]
 
         logprobs = tf.nn.log_softmax(logits_seq)
+
+        if crop_last:
+            logprobs = logprobs[:, :-1]
+            states_seq = [state_seq[:, :-1] for state_seq in states_seq]
+
         if return_state:
             return logprobs, states_seq
         else:
