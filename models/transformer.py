@@ -16,8 +16,8 @@ class Transformer:
         hp['force_bos'] = hp.get('force_bos', True)
 
         with tf.variable_scope(name):
-            self.enc = TransformerEncoder("", inp_voc, hid_size=hid_size, **hp)
-            self.dec = TransformerDecoder("", inp_voc, hid_size=hid_size,
+            self.enc = TransformerEncoder("enc", inp_voc, hid_size=hid_size, **hp)
+            self.dec = TransformerDecoder("dec", inp_voc, hid_size=hid_size,
                                           allow_lookahead=False,
                                           **hp)
 
@@ -36,7 +36,8 @@ class Transformer:
 
         dec_out, dec_attn_mask = self.dec(enc_out, out, enc_attn_mask, is_train=is_train)
 
-        return self.logits(dec_out)
+        logits = self.logits(dec_out)
+        return tf.nn.log_softmax(logits)
 
     # Translation code
 
