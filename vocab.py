@@ -8,7 +8,9 @@ class Vocab:
     Here's a tour to what it does: http://bit.ly/2BDupuH
     """
     _default_tokens = ("__BOS__", "__EOS__", "__UNK__")
-    remove_bpe = lambda s: s.replace('@@ ', '')
+    @staticmethod
+    def remove_bpe(s):
+        return s.replace('@@ ', '').replace("&apos;", "'").replace(" '", "'") # TODO: make this generic
 
     def __init__(self, tokens):
         tokens = tuple(tokens)
