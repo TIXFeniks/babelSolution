@@ -15,7 +15,7 @@ class Transformer(TranslateModel):
         self.inp_voc = inp_voc
         self.out_voc = out_voc
         self.hp = hp
-        hp['force_bos'] = hp.get('force_bos', True)
+        hp['force_bos'] = hp.get('force_bos', False)
 
         with tf.variable_scope(name):
             self.enc = TransformerEncoder("enc", inp_voc, hid_size=hid_size, **hp)
