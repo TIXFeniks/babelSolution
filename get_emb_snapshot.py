@@ -1,7 +1,10 @@
 import sys
 import argparse
-
 import fasttext
+import numpy as np
+
+from vocab import Vocab
+
 
 parser = argparse.ArgumentParser()
 
@@ -23,10 +26,17 @@ args = parser.parse_args()
 emb_dim = args.emb_dim
 epochs = 1
 
-print(args)
-model_1_bpe = fasttext.cbow(args.inp_path + "/bpe_all_1.txt", args.out_path + "/model_1_bpe", dim=emb_dim, thread=4, epoch=args.epochs, bucket = 10)
-model_2_bpe = fasttext.cbow(args.inp_path + "/bpe_all_2.txt", args.out_path + "/model_2_bpe", dim=emb_dim, thread=4, epoch=args.epochs, bucket = 10)
+print("Starting training models...")
+model_1_bpe = fasttext.cbow(args.inp_path + "/bpe_all_1.txt", args.out_path + "/model_1_bpe", dim=emb_dim, thread=4, epoch=args.epochs)
+model_2_bpe = fasttext.cbow(args.inp_path + "/bpe_all_2.txt", args.out_path + "/model_2_bpe", dim=emb_dim, thread=4, epoch=args.epochs)
 
 
+voc_1 = Vocab.from_file(args.inp_path + "/1.voc")
+voc_2 = Vocab.from_file(args.inp_path + "/2.voc")
+
+emb_1 = np.vstack([np.array(model_1_bpe[w]) for w in voc_1.tokens])
+emb_2 = np.vstack([np.array(model_2_bpe[w]) for w in voc_2.tokens])
+
+np.savez(args.out_path + "emb_snapshot", **{args.inp_emb_name : emb_1, args.out_emb_name : emb_2})
 
 
