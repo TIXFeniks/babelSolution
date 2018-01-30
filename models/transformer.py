@@ -3,9 +3,10 @@ from lib.tensor_utils import *
 from lib.transformer_layers import TransformerEncoder, TransformerDecoder,\
                                    add_timing_signal, make_attn_mask
 from collections import namedtuple
+from . import TranslateModel
 
 
-class Transformer:
+class Transformer(TranslateModel):
     """ The main model, consisting of encoder, decoder and logits """
     def __init__(self, name, inp_voc, out_voc, *_args,
                  hid_size=256, **hp):
@@ -26,7 +27,7 @@ class Transformer:
                 projection_matrix = tf.transpose(self.dec.emb_out.mat)
 
             self.logits = Dense('logits', hid_size, len(out_voc),
-                                activaction=nop, W=projection_matrix)
+                                activation=nop, W=projection_matrix)
 
     def symbolic_score(self, inp, out, is_train=False):
         """ Computes a sequence of logits aka model prediction. Used for training """
@@ -155,6 +156,9 @@ class Transformer:
 
     def get_rdo(self, dec_state):
         return dec_state.rdo, dec_state.out_seq
+
+    def get_logits(self, dec_state, **flags):
+        return self.logits(dec_state.rdo)
 
     def get_attnP(self, dec_state):
         return dec_state.attnP

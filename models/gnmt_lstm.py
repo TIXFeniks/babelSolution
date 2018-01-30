@@ -4,6 +4,8 @@ from lib.layers import AttentionLayer
 from lib.tensor_utils import infer_length, infer_mask
 from vocab import Vocab
 
+# NOTE: gnmt_lstm does not actually inherit TranslateModel, please don't use it to test advanced inference.
+
 
 class AttentiveTranslationModel:
     def __init__(self, name, inp_voc, out_voc,

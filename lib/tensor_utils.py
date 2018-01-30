@@ -3,6 +3,8 @@ assorted aux functions dealing with tensors
 """
 import tensorflow as tf
 import numpy as np
+from lib.smx import sliced_argmax
+
 
 def infer_length(seq, eos=1, time_major=False):
     """

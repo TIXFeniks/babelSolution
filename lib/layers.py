@@ -6,14 +6,14 @@ from .tensor_utils import is_tf_tensor, dot, is_dropout_enabled, nop
 class Dense:
     def __init__(
         self, name,
-        inp_size, out_size, activaction=nop,
+        inp_size, out_size, activation=nop,
         W=None, b=None,
     ):
         """
         Dense layer that actually creates all it's variables on init.
         :param inp_size: number of input features
         :param out_size: number of units
-        :param activaction: nonlinearity applied after linear part
+        :param activation: nonlinearity applied after linear part
         :param W: tf tensor (to be used permanently) or tf initializer (to be used at init)
             shape should be (inp_size, out_size)
         :param b: tf tensor (to be used permanently) or tf initializer (to be used at init)
@@ -21,7 +21,7 @@ class Dense:
         Stores two variables: name/W and name/b
         """
         self.name = name
-        self.activ = activaction
+        self.activ = activation
         self.inp_size = inp_size
         self.out_size = out_size
 
@@ -154,13 +154,13 @@ class FeedforwardBlock:
             self.first_conv = Dense(
                 'conv1',
                 inp_size, hid_size,
-                activaction=tf.nn.relu,
+                activation=tf.nn.relu,
                 b=tf.zeros_initializer())
 
             self.second_conv = Dense(
                 'conv2',
                 hid_size, out_size,
-                activaction=lambda x: x,
+                activation=lambda x: x,
                 b=tf.zeros_initializer())
 
     def __call__(self, inputs, params_summary=None):
@@ -204,13 +204,13 @@ class MultiHeadAttention:
             self.combined_conv = Dense(
                 'mem_conv',  # old name for compatibility
                 inp_size, key_depth * 2 + value_depth,
-                activaction=lambda x: x,
+                activation=lambda x: x,
                 b=tf.zeros_initializer())
 
             self.query_conv = Dense(
                 'query_conv',
                 inp_size, key_depth,
-                activaction=lambda x: x,
+                activation=lambda x: x,
                 W=self.combined_conv.W[:, :key_depth],
                 b=self.combined_conv.b[:key_depth],
             )
@@ -218,7 +218,7 @@ class MultiHeadAttention:
             self.kv_conv = Dense(
                 'kv_conv',
                 inp_size, key_depth + value_depth,
-                activaction=lambda x: x,
+                activation=lambda x: x,
                 W=self.combined_conv.W[:, key_depth:],
                 b=self.combined_conv.b[key_depth:],
             )
@@ -226,7 +226,7 @@ class MultiHeadAttention:
             self.out_conv = Dense(
                 'out_conv',
                 value_depth, output_depth,
-                activaction=lambda x: x,
+                activation=lambda x: x,
                 b=tf.zeros_initializer())
 
     def __call__(self, query_inp, attn_mask, kv_inp=None, kv=None):
