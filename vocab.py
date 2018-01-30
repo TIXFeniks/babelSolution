@@ -128,26 +128,4 @@ class Vocab:
         # inplace substract first.tokens from other_tokens
         other_tokens.difference_update(set(first.tokens))
 
-        return Vocab(first.tokens + tuple(other_tokens))
-
-
-class VocAdapter(tfnn.task.seq2seq.voc.Voc):
-    def __init__(self, vocab):
-        self._vocab = vocab
-
-    @property
-    def bos(self):
-        return self._vocab.BOS
-
-    @property
-    def eos(self):
-        return self._vocab.EOS
-
-    def ids(self, words):
-        return self._vocab.tokenize(words)
-
-    def words(self, ids):
-        return self._vocab.detokenize(ids, sep=None)
-
-    def size(self):
-        return len(self._vocab)
+        return Vocab(first.tokens + tuple(sorted(other_tokens)))
