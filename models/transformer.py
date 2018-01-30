@@ -31,9 +31,9 @@ class Transformer:
     def symbolic_score(self, inp, out, is_train=False):
         """ Computes a sequence of logits aka model prediction. Used for training """
 
-        # rdo: [batch_size * nout * hid_dim]
         enc_out, enc_attn_mask = self.enc(inp, is_train=is_train)
 
+        # rdo: [batch_size * nout * hid_dim]
         dec_out, dec_attn_mask = self.dec(enc_out, out, enc_attn_mask, is_train=is_train)
 
         logits = self.logits(dec_out)
