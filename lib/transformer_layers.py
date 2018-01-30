@@ -33,7 +33,7 @@ class TransformerEncoder:
         self.normalize_out = normalize_out
         self.rescale_emb = rescale_emb
         self.dropout = dropout
-
+        self.num_layers = num_layers_enc
         self.inp_voc = inp_voc
         self.emb_size = self.hid_size = hid_size
         self.ff_size = ff_size = ff_size or hid_size
@@ -148,6 +148,7 @@ class TransformerDecoder:
         self.rescale_emb = rescale_emb
         self.dropout = dropout
         self.out_voc = out_voc
+        self.num_layers = num_layers_dec
         self.emb_size = self.hid_size = hid_size
         self.ff_size = ff_size = ff_size or hid_size
 
