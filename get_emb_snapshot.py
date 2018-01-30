@@ -30,7 +30,7 @@ print("Starting training models...")
 model_1_bpe = fasttext.cbow(args.inp_path + "/bpe_all_1.txt", args.out_path + "/model_1_bpe", dim=emb_dim, thread=4, epoch=args.epochs)
 model_2_bpe = fasttext.cbow(args.inp_path + "/bpe_all_2.txt", args.out_path + "/model_2_bpe", dim=emb_dim, thread=4, epoch=args.epochs)
 
-
+print("Making embeddings")
 voc_1 = Vocab.from_file(args.inp_path + "/1.voc")
 voc_2 = Vocab.from_file(args.inp_path + "/2.voc")
 
