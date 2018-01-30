@@ -192,7 +192,7 @@ class Transformer(TranslateModel):
 
         elif mode == 'beam_search':
             return BeamSearchInference(
-                model=self.get_translate_model(),
+                model=self,
                 batch_placeholder=batch_placeholder,
                 force_bos=self.hp.get('force_bos', False),
                 **flags
