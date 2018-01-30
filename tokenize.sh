@@ -21,25 +21,26 @@ do
 		$mosesdecoder/scripts/tokenizer/tokenizer.perl -threads=$threads -penn > \
 		$data/tok_$corp$lang.txt
 	done
-	(cat $data/tok_parallel$lang.txt; echo ""; cat $data/tok_corpus$lang.txt) > $data/all_tok_$lang.txt
+	(cat $data/tok_parallel$lang.txt; cat $data/tok_corpus$lang.txt) > $data/tok_all_$lang.txt
 done
 
 for lang in 1 2
 do 
 	echo "Learning voc ${lang} ..."
-	$subword_nmt/learn_joint_bpe_and_vocab.py -i $data/all_tok_$lang.txt -s 32000 -o $data/$lang.bpe --write-vocabulary $data/$lang.voc
+	$subword_nmt/learn_joint_bpe_and_vocab.py -i $data/tok_all_$lang.txt -s 32000 -o $data/$lang.bpe --write-vocabulary $data/$lang.voc
 done
 
 echo 'Transforming'
 for lang in 1 2
 do
-    for corp in parallel corpus
+	for corp in parallel corpus
 	do 
 		echo "Transforming ${corp} ${lang} ..."
 		cat $data/tok_$corp$lang.txt | \
 		$subword_nmt/apply_bpe.py -c $data/$lang.bpe --vocabulary $data/$lang.voc \
 		--vocabulary-threshold 0 -o $data/bpe_$corp$lang.txt
 	done
+	(cat $data/bpe_parallel$lang.txt; cat $data/bpe_corpus$lang.txt) > $data/bpe_all_$lang.txt
 done
 
 cat $data/input.txt | \
