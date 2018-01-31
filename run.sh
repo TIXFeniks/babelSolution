@@ -40,7 +40,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train.py" "$MODEL_NAME" \
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run.py" "$MODEL_NAME" \
             --data_path="$DATA_PATH" \
-            --model_path="$PROJECT_PATH/trained_models/$MODEL_NAME/model.npz" \
+            --model_path="$PROJECT_DIR/trained_models/$MODEL_NAME/model.npz" \
             --input_path="$DATA_PATH/bpe_input.txt" \
             --output_path="$OUTPUT_DATA_PATH/output.txt" \
             --hp_file_path="$HP_FILE_PATH" \
