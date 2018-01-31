@@ -134,10 +134,11 @@ def dropout_scope(enabled):
         _tls.dropout_enabled = was_enabled
 
 
+def log_sigmoid(x): return -tf.nn.softplus(-x)
+
 # miscellaneous stuff
 
 def nop(x): return x
-
 
 def is_tf_tensor(x):
     """
@@ -156,3 +157,10 @@ def is_tf_tensor(x):
 def is_scalar(var):
     """ checks if var is not scalar. Works for list, np.array, tf.tensor and many similar classes """
     return len(np.shape(var)) == 0
+
+def stupidmax(x,w=5,axis=1,mask=None):
+    """Computes smooth version of softmax inspired by https://arxiv.org/abs/1612.05628"""
+    exp = tf.exp(w*x)
+    mean_exp = tf.reduce_sum(exp,axis) if mask is None else tf.reduce_sum(exp*mask[:,:,None],axis)
+    return tf.log(mean_exp)/w
+
