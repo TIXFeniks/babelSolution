@@ -136,6 +136,33 @@ def dropout_scope(enabled):
 
 def log_sigmoid(x): return -tf.nn.softplus(-x)
 
+
+def get_var_shape(x, session=None):
+    """returns the shape of a tf variable"""
+    session = session or tf.get_default_session()
+    _shp = tf.shape(x)
+    shp = tuple(session.run([_shp[i] for i in range(x.shape.ndims)]))
+    return shp
+
+
+def all_shapes_equal(*vars, session=None, shape = None, mode="simple"):
+    """
+        returns True if all input vars have the same shape [equal to the given shape (optional)]
+        assets that if mode == "assert", returns False otherwise
+    """
+    session = session or tf.get_default_session()
+    for x in vars:
+        _shp = get_var_shape(x, session) if isinstance(x, tf.Variable) else x.shape
+        if shape and _shp == shape:
+            if mode == "assert":
+                raise AssertionError(
+                 "shapes must be the same for given variables, but provided shapes are different: {} != {}"
+                     .format(shape, _shp))
+            else:
+                return False
+    return True
+
+
 # miscellaneous stuff
 
 def nop(x): return x
