@@ -34,6 +34,7 @@ def train_model(model_name, config):
 
     inp_voc = Vocab.from_file('{}/1.voc'.format(config.get('data_path')))
     out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
+    max_len = config.get('max_len', 200)
 
     # Hyperparameters
     hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
@@ -141,8 +142,11 @@ def train_model(model_name, config):
             batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
             with tqdm(batches) as t:
                 for batch_src, batch_dst in t:
-                    batch_src_ix = inp_voc.tokenize_many(batch_src)
-                    batch_dst_ix = out_voc.tokenize_many(batch_dst)
+
+                    # Note: we don't use voc.tokenize_many(batch, max_len=max_len)
+                    # cuz it forces batch length to be that long and we often get away with much less
+                    batch_src_ix = inp_voc.tokenize_many(batch_src)[:, :max_len]
+                    batch_dst_ix = out_voc.tokenize_many(batch_dst)[:, :max_len]
 
                     feed_dict = {inp: batch_src_ix, out: batch_dst_ix}
 
@@ -154,7 +158,8 @@ def train_model(model_name, config):
 
                     if (num_iters_done+1) % config.get('validate_every', 500) == 0:
                         print('Validating')
-                        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config)
+                        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
+                                                           model_name, config, max_len=max_len)
                         val_scores.append(val_score)
                         print('Validation BLEU: {:0.3f}'.format(val_score))
 
@@ -191,7 +196,8 @@ def train_model(model_name, config):
         # Training is done!
         # Let's check the val score of the model and if it's good — save it
         print('Computing final validation score.')
-        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config)
+        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
+                                           model_name, config, max_len=max_len)
         print('Final validation BLEU is: {:0.3f}'.format(val_score))
 
         if val_score >= max(val_scores):
@@ -218,6 +224,7 @@ def main():
     parser.add_argument('--max_epochs', type=int)
     parser.add_argument('--max_time_seconds', type=int)
     parser.add_argument('--batch_size_for_inference', type=int)
+    parser.add_argument('--max_len', type=int)
 
     parser.add_argument('--gpu_memory_fraction', type=float)
 
