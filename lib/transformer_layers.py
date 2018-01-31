@@ -21,6 +21,7 @@ class TransformerEncoder:
             normalize_out=False,
             rescale_emb=False,
             allow_lookahead=True,
+            inp_emb_bias=False,
             dropout=0.,
             **_kwargs
     ):
@@ -40,6 +41,9 @@ class TransformerEncoder:
         self.ff_size = ff_size = ff_size or hid_size
         self.allow_lookahead = allow_lookahead
 
+        self.emb_inp_bias = 0
+        if inp_emb_bias:
+            self.emb_inp_bias = tf.get_variable('emb_inp_bias', shape=[1, 1, self.emb_size])
 
         with tf.variable_scope(name):
             if self.inp_voc is not None:
@@ -91,6 +95,7 @@ class TransformerEncoder:
             enc_inp = self.emb_inp(enc_inp)  # [batch_size * ninp * emb_dim]
             if self.rescale_emb:
                 enc_inp *= self.emb_size ** .5
+            enc_inp += self.emb_inp_bias
 
             assert enc_inp.shape.ndims == 3, "input must have shape [batch, time, units]"
         else:
@@ -136,6 +141,7 @@ class TransformerDecoder:
             num_layers_dec=1,
             res_steps='nlda',
             normalize_out=False,
+            out_emb_bias=False,
             rescale_emb=False,
             shift_right=False,
             dropout=0.,
@@ -157,6 +163,9 @@ class TransformerDecoder:
         self.shift_right = shift_right
         self.ff_size = ff_size = ff_size or hid_size
 
+        self.emb_out_bias = 0
+        if out_emb_bias:
+            self.emb_out_bias = tf.get_variable('emb_inp_bias', shape=[1, 1, self.emb_size])
 
         with tf.variable_scope(name):
             if self.out_voc is not None:
@@ -227,6 +236,7 @@ class TransformerDecoder:
             dec_inp = self.emb_out(dec_inp)  # [batch_size * ninp * emb_dim]
             if self.rescale_emb:
                 dec_inp *= self.emb_size ** .5
+            dec_inp += self.emb_out_bias
         else:
             assert dec_attn_mask is not None, "attn_mask must be specified if inp is not int32"
 
