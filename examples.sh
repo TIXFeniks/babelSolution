@@ -7,5 +7,5 @@ PYTHONPATH=. python src/train.py gnmt \
             --val_split_size=0.1 \
             --save_every=100
 
-sudo nvidia-docker run -v /home/user32878/data/test_data/:/input -v /home/user32878/data/output/:/output -it test /bin/bash
-sudo nvidia-docker build -t test .
+sudo nvidia-docker run -v /home/user32878/data/test_data2/:/input -v /home/user32878/data/test_data2/:/output -it universome/kek /nmt/run.sh
+sudo nvidia-docker build -t universome/kek .
