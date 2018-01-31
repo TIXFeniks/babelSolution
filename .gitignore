@@ -77,6 +77,3 @@ debian/files
 
 # Directory with trained models
 trained_models/
-
-# Directory with hyperparameter files
-hp_files/

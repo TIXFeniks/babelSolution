@@ -8,13 +8,12 @@ import tensorflow as tf
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from pandas import ewma
-from sklearn.model_selection import train_test_split
 
 from bleu import compute_bleu
 from models.gnmt_lstm import AttentiveTranslationModel
 from vocab import Vocab
 from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model
-from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
+from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, should_stop_early
 from batch_iterator import iterate_minibatches
 
 MODEL_NAME = 'super_gnmt_model'
@@ -28,14 +27,15 @@ def train_gnmt(config):
     if not os.path.isdir('trained_models'): os.mkdir('trained_models')
     if not os.path.isdir(model_path): os.mkdir(model_path)
 
-    src_path = '{}/bpe_parallel1.txt'.format(config.get('data_path'))
-    dst_path = '{}/bpe_parallel2.txt'.format(config.get('data_path'))
+    src_train_path = '{}/bpe_parallel_train1.txt'.format(config.get('data_path'))
+    dst_train_path = '{}/bpe_parallel_train2.txt'.format(config.get('data_path'))
+    src_val_path = '{}/bpe_parallel_val1.txt'.format(config.get('data_path'))
+    dst_val_path = '{}/bpe_parallel_val2.txt'.format(config.get('data_path'))
 
-    src_data = open(src_path, 'r', encoding='utf-8').read().splitlines()
-    dst_data = open(dst_path, 'r', encoding='utf-8').read().splitlines()
-
-    split = train_test_split(src_data, dst_data, test_size=config.get('val_split_size', 0.1), random_state=42)
-    src_train, src_val, dst_train, dst_val = split
+    src_train = open(src_train_path, 'r', encoding='utf-8').read().splitlines()
+    dst_train = open(dst_train_path, 'r', encoding='utf-8').read().splitlines()
+    src_val = open(src_val_path, 'r', encoding='utf-8').read().splitlines()
+    dst_val = open(dst_val_path, 'r', encoding='utf-8').read().splitlines()
 
     inp_voc = Vocab.from_file('{}/1.voc'.format(config.get('data_path')))
     out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
@@ -74,7 +74,6 @@ def train_gnmt(config):
 
         # Loading pretrained model
         if config.get('pretrained_model_path'):
-            # model_weights_path = open(config.get('pretrained_model_path'), 'rb')
             w_values = np.load(config.get('pretrained_model_path'))
 
             curr_var_names = set(w.name for w in weights)
@@ -100,8 +99,19 @@ def train_gnmt(config):
 
         batch_size = config.get('batch_size', 16)
         batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
+        epoch = 0
         loss_history = []
         val_scores = []
+
+        def save_model(i, is_last_model=False):
+            if is_last_model:
+                save_path = '{}/model.npz'.format(model_path)
+            else:
+                save_path = '{}/model.iter-{}.npz'.format(model_path, i)
+
+            w_values = sess.run(weights)
+            weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
+            np.savez(save_path, **weights_dict)
 
         # TODO(universome): this does not work, but looks like we do not need it :|
         if config.get('plot'):
@@ -110,8 +120,11 @@ def train_gnmt(config):
             ax = fig.add_subplot(111)
             fig.show()
 
-        while True:
-            for i, (batch_src, batch_dst) in enumerate(tqdm(batches)):
+        num_iters_done = 0
+        should_stop = False # We need this var to break outer loop
+
+        while not should_stop:
+            for i, (batch_src, batch_dst) in enumerate(batches):
                 batch_src_ix = inp_voc.tokenize_many(batch_src)
                 batch_dst_ix = out_voc.tokenize_many(batch_dst)
 
@@ -123,10 +136,7 @@ def train_gnmt(config):
                 print('Iterations done: {}. Loss: {:.2f}'.format(i, loss_t))
 
                 if (i+1) % config.get('save_every', 500) == 0:
-                    # Saving model
-                    w_values = sess.run(weights)
-                    weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
-                    np.savez('{}/model.iter-{}.npz'.format(model_path, i+1), **weights_dict)
+                    save_model(i+1)
 
                     # Saving optimizer state
                     state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
@@ -138,7 +148,8 @@ def train_gnmt(config):
                     val_scores.append(val_score)
                     print('Validation BLEU: {:0.3f}'.format(val_score))
 
-                    if use_early_stopping and len(val_scores) > 0 and val_scores[-1] < val_score[-2]:
+                    if use_early_stopping and should_stop_early(val_scores, config.get('early_stopping_last_n')):
+                        should_stop = True
                         break
 
                 if config.get('plot') and (i+1) % 10 == 0:
@@ -151,10 +162,19 @@ def train_gnmt(config):
                     # fig.canvas.draw()
                     fig.show()
 
+                num_iters_done += 1
+
+                if config.get('max_num_iters') and num_iters_done == config.get('max_num_iters'):
+                    should_stop = True
+                    break
+
             epoch +=1
 
             if config.get('max_epochs') and config.get('max_epochs') == epoch:
                 break
+
+        save_model(i+1, True)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Run project commands')
@@ -173,6 +193,9 @@ def main():
     model_parser.add_argument('--val_split_size', type=float)
     model_parser.add_argument('--inp_embeddings_path')
     model_parser.add_argument('--out_embeddings_path')
+    model_parser.add_argument('--max_num_iters', type=int)
+    model_parser.add_argument('--use_early_stopping', type=bool)
+    model_parser.add_argument('--early_stopping_last_n', type=int)
     model_parser.add_argument('--max_epochs', type=int)
 
     args = parser.parse_args()

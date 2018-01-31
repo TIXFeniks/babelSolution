@@ -1,32 +1,36 @@
 #!/bin/sh
 
 ### USAGE: ./tokenize.sh [home_folder (str)] [tokens (int)] [joint dict (true/false)]
-### home_folder should contain ./data ./libs/mosesdecoder ./libs/subword-nmt ./scripts/split_parallel.py 
+### home_folder should contain ./data ./libs/mosesdecoder ./libs/subword-nmt ./scripts/split_parallel.py
 
 if [ -z "$1" ]; then
-	home=/home/anton/deephack/onsight  
+	home=/home/anton/deephack/onsight
 else
 	home=$1
 fi
 
-
 if [ -z "$2" ]; then
-	tokens=4000  
+	data_dir=/home/anton/deephack/onsight/data
 else
-	tokens=$2
+	data_dir=$2
 fi
 
 if [ -z "$3" ]; then
-	joint_dict=false  
+	tokens=4000
 else
-	joint_dict=$3
+	tokens=$3
+fi
+
+if [ -z "$4" ]; then
+	joint_dict=false
+else
+	joint_dict=$4
 fi
 
 
-mosesdecoder=$home/libs/mosesdecoder
-subword_nmt=$home/libs/subword-nmt
-scripts=$home/scripts
-data=$home/data
+mosesdecoder=$home/ext_libs/mosesdecoder
+subword_nmt=$home/ext_libs/subword-nmt
+data=$data_dir
 
 threads=4
 
@@ -34,12 +38,12 @@ echo "$joint_dict"
 echo "$home"
 echo "$tokens"
 
-cat $data/parallel_corpus.txt | $scripts/split_parallel.py -o $data
+python3.6 $home/split_parallel.py -o $data -i $data
 
 for lang in 1 2
 do
-	for corp in parallel_train parallel_val corpus 
-	do 	
+	for corp in parallel_train parallel_val corpus
+	do
 		echo "Tokenizing ${corp}${lang} ..."
 		cat $data/$corp$lang.txt | \
 		$mosesdecoder/scripts/tokenizer/normalize-punctuation.perl | \
@@ -51,13 +55,13 @@ done
 
 
 
-if [ $joint_dict = true ]; then 
+if [ $joint_dict = true ]; then
 	echo "Learning joint ..."
 	$subword_nmt/learn_joint_bpe_and_vocab.py -i $data/tok_all_1.txt $data/tok_all_2.txt -s $tokens -o $data/1.bpe --write-vocabulary $data/1.voc $data/2.voc
 	cp $data/1.bpe $data/2.bpe
-else 
+else
 	for lang in 1 2
-	do 
+	do
 		echo "Learning voc ${lang} ..."
 		$subword_nmt/learn_joint_bpe_and_vocab.py -i $data/tok_all_$lang.txt -s $tokens -o $data/$lang.bpe --write-vocabulary $data/$lang.voc
 	done
@@ -69,7 +73,7 @@ echo 'Transforming'
 for lang in 1 2
 do
 	for corp in parallel_train parallel_val corpus
-	do 
+	do
 		echo "Transforming ${corp} ${lang} ..."
 		cat $data/tok_$corp$lang.txt | \
 		$subword_nmt/apply_bpe.py -c $data/$lang.bpe --vocabulary $data/$lang.voc \

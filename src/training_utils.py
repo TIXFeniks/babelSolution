@@ -1,5 +1,6 @@
 from itertools import islice, chain
 
+import numpy as np
 import tensorflow as tf
 
 from vocab import Vocab
@@ -43,11 +44,11 @@ def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val):
     src_val_ix = inp_voc.tokenize_many(src_val)
 
     inp = tf.placeholder(tf.int32, [None, None])
-    sy_translations = model.symbolic_translate(inp)[0]
+    sy_translations = model.symbolic_translate(inp, greedy=True)[0]
 
     translations = []
 
-    for batch in iterate_minibatches(src_val_ix, batchsize=7):
+    for batch in iterate_minibatches(src_val_ix, batchsize=64):
         translations += sess.run([sy_translations], feed_dict={inp: batch[0]})[0].tolist()
 
     outputs = out_voc.detokenize_many(translations, unbpe=True)
@@ -57,3 +58,10 @@ def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val):
     bleu = compute_bleu(references, outputs)[0]
 
     return bleu
+
+
+def should_stop_early(val_scores, use_last_n=5):
+    """Determines if the model does not improve by the validation scores"""
+    if len(val_scores) < use_last_n: return False
+
+    return np.argmax(val_scores[-5:]) is 0
