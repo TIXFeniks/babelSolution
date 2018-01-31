@@ -1,7 +1,7 @@
 from lib.layers import *
 from lib.tensor_utils import *
 from lib.transformer_layers import TransformerEncoder, TransformerDecoder
-
+import tensorflow as tf
 
 class Transformer:
     """ The main model, consisting of encoder, decoder and logits """
@@ -24,7 +24,7 @@ class Transformer:
                 projection_matrix = tf.transpose(self.dec.emb_out.mat)
 
             self.logits = Dense('logits', hid_size, len(out_voc),
-                                activaction=nop, W=projection_matrix)
+                                activation=nop, W=projection_matrix)
 
     def symbolic_score(self, inp, out, is_train=False):
         """ Computes a sequence of logits aka model prediction. Used for training """
@@ -34,7 +34,7 @@ class Transformer:
 
         dec_out, dec_attn_mask = self.dec(enc_out, out, enc_attn_mask, is_train=is_train)
 
-        return self.logits(dec_out)
-
+        logits = self.logits(dec_out)
+        return logits#tf.nn.log_softmax(logits)
     def symbolic_translate(self, inp, out, is_train=False):
         raise NotImplementedError("TODO(jheuristic) finish merging")
