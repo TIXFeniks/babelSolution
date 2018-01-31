@@ -122,3 +122,37 @@ class TranslateModel:
         :param condition: a boolean condition vector of shape [batch_size]
         """
         return nested_map(lambda x, y: tf.where(condition, x, y), state_on_true, state_on_false)
+
+    def symbolic_translate(self, inp, mode='beam_search', **flags):
+        """
+        A function that takes a symbolic input tokens and returns symolic translations
+        :param inp: input tokens, int32[batch, time]
+        :param mode: 'greedy', 'sample', or 'beam_search'
+        :param flags: anything else you want to pass to decoder, encode, decode, sample, etc.
+        :return: a class with .best_out, .best_scores containing symbolic tensors for translations
+        """
+        batch_placeholder = {'inp': inp}
+        assert mode in ('greedy', 'sample', 'beam_search', 'beam_search_old')
+
+        # create default flags
+        beam_search_flags_in_hp = ['beam_size', 'beam_spread', 'len_alpha', 'attn_beta']
+        for flag in beam_search_flags_in_hp:
+            if flag in self.hp and flag not in flags:
+                flags[flag] = self.hp[flag]
+        flags['sampling_strategy'] = 'sample' if mode == 'sample' else 'greedy'
+
+        if mode in ('greedy', 'sample'):
+            return GreedyInference(
+                model=self,
+                batch_placeholder=batch_placeholder,
+                sampling_strategy='best' if mode == 'greedy' else 'sample',
+                force_bos=self.hp.get('force_bos', False),
+                **flags)
+
+        elif mode == 'beam_search':
+            return BeamSearchInference(
+                model=self,
+                batch_placeholder=batch_placeholder,
+                force_bos=self.hp.get('force_bos', False),
+                **flags
+            )
