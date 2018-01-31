@@ -31,10 +31,3 @@ def batch_generator_over_dataset(src, dst, batch_size=16, batches_per_epoch=None
         batch_dst = [pair[1] for pair in batch]
 
         yield (batch_src[0], batch_dst[0])
-
-# class dev:
-#     dev_src = "./data/bpe_parallel1.txt"
-#     dev_dst = "./data/bpe_parallel2.txt"
-
-#     inp_lines = np.array(open(dev_src).read()[:-1].split('\n'))
-#     out_lines = np.array(open(dev_dst).read()[:-1].split('\n'))
