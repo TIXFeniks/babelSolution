@@ -38,7 +38,7 @@ cat $data/parallel_corpus.txt | $scripts/split_parallel.py -o $data
 
 for lang in 1 2
 do
-	for corp in parallel corpus
+	for corp in parallel_train parallel_val corpus 
 	do 	
 		echo "Tokenizing ${corp}${lang} ..."
 		cat $data/$corp$lang.txt | \
@@ -46,7 +46,7 @@ do
 		$mosesdecoder/scripts/tokenizer/tokenizer.perl -threads $threads -penn > \
 		$data/tok_$corp$lang.txt
 	done
-	(cat $data/tok_parallel$lang.txt; cat $data/tok_corpus$lang.txt) > $data/tok_all_$lang.txt
+	(cat $data/tok_parallel_val$lang.txt; cat $data/tok_parallel_train$lang.txt; cat $data/tok_corpus$lang.txt) > $data/tok_all_$lang.txt
 done
 
 
@@ -68,14 +68,14 @@ fi
 echo 'Transforming'
 for lang in 1 2
 do
-	for corp in parallel corpus
+	for corp in parallel_train parallel_val corpus
 	do 
 		echo "Transforming ${corp} ${lang} ..."
 		cat $data/tok_$corp$lang.txt | \
 		$subword_nmt/apply_bpe.py -c $data/$lang.bpe --vocabulary $data/$lang.voc \
 		--vocabulary-threshold 0 -o $data/bpe_$corp$lang.txt
 	done
-	(cat $data/bpe_parallel$lang.txt; cat $data/bpe_corpus$lang.txt) > $data/bpe_all_$lang.txt
+	(cat $data/bpe_parallel_train$lang.txt; cat $data/bpe_parallel_val$lang.txt; cat $data/bpe_corpus$lang.txt) > $data/bpe_all_$lang.txt
 done
 
 cat $data/input.txt | \
