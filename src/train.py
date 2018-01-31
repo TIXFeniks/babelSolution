@@ -222,6 +222,7 @@ def main():
     parser.add_argument('--max_epochs', type=int)
     parser.add_argument('--max_time_seconds', type=int)
     parser.add_argument('--batch_size_for_inference', type=int)
+    parser.add_argument('--max_len', type=int)
 
     parser.add_argument('--gpu_memory_fraction', type=float)
 

@@ -26,6 +26,7 @@ def run_model(model_name, config):
 
     hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
     gpu_options = create_gpu_options(config)
+    max_len = config.get('max_input_len', 200)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         model = create_model(model_name, inp_voc, out_voc, hp)
@@ -57,11 +58,10 @@ def run_model(model_name, config):
         translations = []
 
         for batch in iterate_minibatches(src_data_ix, batchsize=config.get('batch_size_for_inference')):
-            translations += sess.run([sy_translations], feed_dict={inp: batch[0]})[0].tolist()
+            translations += sess.run([sy_translations], feed_dict={inp: batch[0][:, :max_len]})[0].tolist()
 
-        translations = [t[1:] for t in translations] # Removing BOS
-
-        outputs = out_voc.detokenize_many(translations, unbpe=True)
+        # deprocess = True gets rid of BOS and EOS
+        outputs = out_voc.detokenize_many(translations, unbpe=True, deprocess=True)
 
         print('Saving the results into %s' % output_path)
         with open(output_path, 'wb') as output_file:
@@ -78,6 +78,7 @@ def main():
     parser.add_argument('--output_path')
     parser.add_argument('--hp_file_path')
     parser.add_argument('--batch_size_for_inference', type=int)
+    parser.add_argument('--max_input_len', type=int)
     parser.add_argument('--gpu_memory_fraction', type=float)
 
     args = parser.parse_args()
