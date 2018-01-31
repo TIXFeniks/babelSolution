@@ -12,7 +12,7 @@ from pandas import ewma
 
 from vocab import Vocab
 from src.training_utils import *
-from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
+from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, all_shapes_equal
 
 
 def train_model(model_name, config):
@@ -90,36 +90,29 @@ def train_model(model_name, config):
         initialize_uninitialized_variables(sess)
 
         assigns = []
-        weights_dict = {w.name[len(MODEL_NAME)+1:]: w for w in weights}
+        weights_by_common_name = {w.name[len(model_name)+1:]: w for w in weights}
         if config.get('target-lm-path'):
             with np.load(config.get('target-lm-path')) as dic:
                 for key in dic: # decoder_init
                     w_lm = dic[key]
                     weights_key = key.replace(
                         'lm/','').replace('main/','').replace("enc",'dec').replace("inp","out")
-                    w_m = weights_dict[weights_key]
+                    w_var = weights_by_common_name[weights_key]
 
-                    _shp = tf.shape(w_m)
-                    shp1 = tuple(sess.run([_shp[i] for i in range(w_m.shape.ndims)]))
-                    shp2 = w_lm.shape
-                    assert  shp1 == shp2, AssertionError(
-                        "shapes must be the same for {}, provided shapes are {} and {}".format(key, shp1, shp2))
-                    assigns.append(tf.assign(w_m,w_lm))
+                    all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
+
+                    assigns.append(tf.assign(w_var,w_lm))
         if config.get('src-lm-path'):
             with np.load(config.get("src-lm-path")) as dic:
                 for key in dic: # encoder_init
                     w_lm = dic[key]
                     weights_key = key.replace('lm/','').replace('main/','')
-                    if "logits" in weights_key:
+                    if "logits" in weights_key: # encoder has no 'logits' layer for the logits to be initialised
                         continue
-                    w_m = weights_dict[weights_key]
+                    w_var = weights_by_common_name[weights_key]
 
-                    _shp = tf.shape(w_m)
-                    shp1 = tuple(sess.run([_shp[i] for i in range(w_m.shape.ndims)]))
-                    shp2 = w_lm.shape
-                    assert  shp1 == shp2, AssertionError(
-                        "shapes must be the same for {}, provided shapes are {} and {}".format(key, shp1, shp2))
-                    assigns.append(tf.assign(w_m,w_lm))
+                    all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
+                    assigns.append(tf.assign(w_var,w_lm))
         sess.run(assigns)
 
         batch_size = hp.get('batch_size', 16)
