@@ -41,20 +41,20 @@ def batch_generator_over_dataset(src, dst, batch_size=16, batches_per_epoch=None
         yield (batch_src, batch_dst)
 
 
-def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_type):
+def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config):
     src_val_ix = inp_voc.tokenize_many(src_val)
 
     inp = tf.placeholder(tf.int32, [None, None])
     translations = []
 
-    if model_type == 'gnmt':
+    if model_name == 'gnmt':
         sy_translations = model.symbolic_translate(inp, greedy=True)[0]
-    elif model_type == 'transformer':
+    elif model_name == 'transformer':
         sy_translations = model.symbolic_translate(inp, mode='greedy', max_len=100).best_out
     else:
         raise NotImplemented("Unknown model")
 
-    for batch in iterate_minibatches(src_val_ix, batchsize=64):
+    for batch in iterate_minibatches(src_val_ix, batchsize=config.get('batch_size_for_inference', 64)):
         translations += sess.run([sy_translations], feed_dict={inp: batch[0]})[0].tolist()
 
     outputs = out_voc.detokenize_many(translations, unbpe=True)
@@ -70,7 +70,8 @@ def should_stop_early(val_scores, use_last_n=5):
     """Determines if the model does not improve by the validation scores"""
     if len(val_scores) < use_last_n: return False
 
-    return np.argmax(val_scores[-5:]) is 0
+    # Stop early if we did not see a good BLEU for a long time
+    return val_scores[-use_last_n] >= max(val_scores[-use_last_n + 1:])
 
 
 def create_model(name, inp_voc, out_voc, hp):
@@ -81,6 +82,22 @@ def create_model(name, inp_voc, out_voc, hp):
         return Model(name, inp_voc, out_voc, **hp)
     else:
         raise ValueError('Model "{}" is unkown'.format(name))
+
+
+def create_gpu_options(config):
+    gpu_options = tf.GPUOptions(allow_growth=True)
+
+    if config.get('gpu_memory_fraction'):
+        gpu_options.per_process_gpu_memory_fraction = config.get('gpu_memory_fraction', 0.95)
+
+    return gpu_options
+
+
+def create_optimizer(hp):
+    lr = hp.get('lr', 1e-4)
+    beta2 = hp.get('beta2', 0.98)
+
+    return tf.train.AdamOptimizer(learning_rate=lr, beta2=beta2)
 
 
 def iterate_minibatches(*to_split, **kwargs):

@@ -1,6 +1,8 @@
 import os
 import json
 import argparse
+from time import time
+from datetime import timedelta
 
 import numpy as np
 import tensorflow as tf
@@ -34,15 +36,10 @@ def train_model(model_name, config):
     out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
 
     # Hyperparameters
-    hp = json.load(open(config.get('hp_file'), 'r', encoding='utf-8')) if config.get('hp_file') else {}
-    lr = hp.get('lr', 1e-4)
+    hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
 
     use_early_stopping = hp.get('use_early_stopping', False)
-
-    gpu_options = tf.GPUOptions(allow_growth=True)
-    if config.get('gpu_memory_fraction'):
-        gpu_options.per_process_gpu_memory_fraction=config.get('gpu_memory_fraction',0.95)
-
+    gpu_options = create_gpu_options(config)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         model = create_model(model_name, inp_voc, out_voc, hp)
@@ -63,7 +60,7 @@ def train_model(model_name, config):
 
         grads = tf.gradients(loss, weights)
         grads = tf.clip_by_global_norm(grads, 100)[0]
-        optimizer = tf.train.AdamOptimizer(learning_rate=lr)
+        optimizer = create_optimizer(hp)
         train_step = optimizer.apply_gradients(zip(grads, weights))
 
         # Loading pretrained model
@@ -92,34 +89,29 @@ def train_model(model_name, config):
 
         initialize_uninitialized_variables(sess)
 
-        batch_size = config.get('batch_size', 16)
+        batch_size = hp.get('batch_size', 16)
         epoch = 0
+        training_start_time = time()
         loss_history = []
         val_scores = []
 
-        def save_model(num_iters_done, is_last_model=False):
-            if is_last_model:
-                save_path = '{}/model.npz'.format(model_path)
-            else:
-                save_path = '{}/model.iter-{}.npz'.format(model_path, num_iters_done)
-
+        def save_model():
+            save_path = '{}/model.npz'.format(model_path)
             print('Saving the model into %s' %save_path)
 
             w_values = sess.run(weights)
             weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
             np.savez(save_path, **weights_dict)
 
-        # TODO(universome): this does not work, but looks like we do not need it :|
-        if config.get('plot'):
-            plt.ion()
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            fig.show()
+        def save_optimizer_state(num_iters_done):
+            # TODO(universome): Do we need iterations in optimizer state?
+            state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
+            np.savez('{}/{}.iter-{}.npz'.format(model_path, 'optimizer_state', num_iters_done), **state_dict)
 
         num_iters_done = 0
-        should_stop = False # We need this var to break outer loop
+        should_start_next_epoch = True # We need this var to break outer loop
 
-        while not should_stop:
+        while should_start_next_epoch:
             batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
 
             for batch_src, batch_dst in batches:
@@ -133,40 +125,32 @@ def train_model(model_name, config):
 
                 print('Iterations done: {}. Loss: {:.2f}'.format(num_iters_done, loss_t))
 
-                if (num_iters_done+1) % config.get('save_every', 500) == 0:
-                    save_model(num_iters_done+1)
-
-                    # Saving optimizer state
-                    state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
-                    np.savez('{}/{}.iter-{}.npz'.format(model_path, 'optimizer_state', num_iters_done+1), **state_dict)
-
                 if (num_iters_done+1) % config.get('validate_every', 500) == 0:
                     print('Validating')
-                    val_score = compute_bleu_for_model(model, sess, model.inp_voc, model.out_voc, src_val, dst_val, model_type=model_name)
+                    val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config)
                     val_scores.append(val_score)
                     print('Validation BLEU: {:0.3f}'.format(val_score))
 
-                    if use_early_stopping and should_stop_early(val_scores, config.get('early_stopping_last_n')):
-                        should_stop = True
-                        print('Early stopping.')
-                        break
+                    # Save model if this is our best model
+                    if np.argmax(val_scores) == len(val_scores)-1:
+                        print('Saving model because it has the highest validation BLEU.')
+                        save_model()
+                        save_optimizer_state(num_iters_done+1)
 
-                if config.get('plot') and (num_iters_done+1) % 10 == 0:
-                    # figure(figsize=[8,8])
-                    ax.clear()
-                    ax.set_title('Batch loss')
-                    ax.plot(loss_history)
-                    ax.plot(ewma(np.array(loss_history), span=50))
-                    ax.grid()
-                    # fig.canvas.draw()
-                    fig.show()
+                    if use_early_stopping and should_stop_early(val_scores, config.get('early_stopping_last_n')):
+                        print('Model did not improve for last %s steps. Early stopping.' % config.get('early_stopping_last_n'))
+                        should_start_next_epoch = False
+                        break
 
                 num_iters_done += 1
 
-                if config.get('max_num_iters') and num_iters_done == config.get('max_num_iters'):
-                    should_stop = True
-                    print('Maximum amount of iterations reached. Stopping.')
-                    break
+                if config.get('max_time_seconds'):
+                    seconds_elapsed = time()-training_start_time
+
+                    if seconds_elapsed > config.get('max_time_seconds'):
+                        print('Maximum allowed training time reached. Training took %s. Stopping.' % seconds_elapsed)
+                        should_start_next_epoch = False
+                        break
 
             epoch +=1
 
@@ -174,27 +158,40 @@ def train_model(model_name, config):
                 print('Maximum amount of epochs reached. Stopping.')
                 break
 
-        save_model(num_iters_done+1, True)
+        print('Validation scores:')
+        print(val_scores)
+
+        # Training is done!
+        # Let's check the val score of the model and if it's good — save it
+        print('Computing final validation score.')
+        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config)
+        print('Final validation BLEU is: {:0.3f}'.format(val_score))
+
+        if val_score >= max(val_scores):
+            save_model()
+            save_optimizer_state(num_iters_done+1)
 
 
 def main():
     parser = argparse.ArgumentParser(description='Run project commands')
 
     parser.add_argument('model')
+
     parser.add_argument('--data_path')
-    parser.add_argument('--hp_file')
-    parser.add_argument('--gpu_memory_fraction', type=float)
-    parser.add_argument('--pretrained_model_path')
-    parser.add_argument('--batch_size', type=int)
     parser.add_argument('--optimizer_state_path')
-    parser.add_argument('--validate_every', type=int)
-    parser.add_argument('--save_every', type=int)
     parser.add_argument('--inp_embeddings_path')
     parser.add_argument('--out_embeddings_path')
-    parser.add_argument('--max_num_iters', type=int)
+    parser.add_argument('--pretrained_model_path')
+    parser.add_argument('--hp_file_path')
+
+    parser.add_argument('--validate_every', type=int)
     parser.add_argument('--use_early_stopping', type=bool)
     parser.add_argument('--early_stopping_last_n', type=int)
     parser.add_argument('--max_epochs', type=int)
+    parser.add_argument('--max_time_seconds', type=int)
+    parser.add_argument('--batch_size_for_inference', type=int)
+
+    parser.add_argument('--gpu_memory_fraction', type=float)
 
     args = parser.parse_args()
 

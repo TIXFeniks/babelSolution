@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from pandas import ewma
 
 from vocab import Vocab
-from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model, create_model, iterate_minibatches
+from src.training_utils import *
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
 
 
@@ -24,13 +24,8 @@ def run_model(model_name, config):
     inp_voc = Vocab.from_file('{}/1.voc'.format(config.get('data_path')))
     out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
 
-    hp = json.load(open(config.get('hp_file'), 'r', encoding='utf-8')) if config.get('hp_file') else {}
-    
-    gpu_options = tf.GPUOptions(allow_growth=True)
-    if config.get('gpu_memory_fraction'):
-        gpu_options.per_process_gpu_memory_fraction = config.get('gpu_memory_fraction', 0.95)
-
-    print(gpu_options)
+    hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
+    gpu_options = create_gpu_options(config)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         model = create_model(model_name, inp_voc, out_voc, hp)
@@ -61,7 +56,7 @@ def run_model(model_name, config):
 
         translations = []
 
-        for batch in iterate_minibatches(src_data_ix, batchsize=config.get('run_batch_size')):
+        for batch in iterate_minibatches(src_data_ix, batchsize=config.get('batch_size_for_inference')):
             translations += sess.run([sy_translations], feed_dict={inp: batch[0]})[0].tolist()
 
         translations = [t[1:] for t in translations] # Removing BOS
@@ -81,8 +76,8 @@ def main():
     parser.add_argument('--model_path')
     parser.add_argument('--input_path')
     parser.add_argument('--output_path')
-    parser.add_argument('--hp_file')
-    parser.add_argument('--run_batch_size', type=int)
+    parser.add_argument('--hp_file_path')
+    parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--gpu_memory_fraction', type=float)
 
     args = parser.parse_args()

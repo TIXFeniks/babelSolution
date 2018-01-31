@@ -1,5 +1,6 @@
 {
     "emb_size": 128,
     "hid_size": 256,
-    "attn_size": 128
+    "attn_size": 128,
+    "batch_size": 64
 }
