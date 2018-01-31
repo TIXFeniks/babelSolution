@@ -89,7 +89,12 @@ def train_gnmt(config):
             pass # TODO(universome): load optimizer state
 
         if config.get('inp_embeddings_path'):
-            pass
+            embeddings = np.load(config.get('inp_embeddings_path'))['arr_0'].astype(np.float32)
+            sess.run(tf.assign(model.emb_inp.trainable_weights[0], tf.constant(embeddings)))
+
+        if config.get('out_embeddings_path'):
+            embeddings = np.load(config.get('out_embeddings_path'))['arr_0'].astype(np.float32)
+            sess.run(tf.assign(model.emb_out.trainable_weights[0], tf.constant(embeddings)))
 
         initialize_uninitialized_variables(sess)
 
@@ -187,7 +192,8 @@ def main():
     model_parser.add_argument('--validate_every', type=int)
     model_parser.add_argument('--save_every', type=int)
     model_parser.add_argument('--val_split_size', type=float)
-    model_parser.add_argument('--embeddings_path')
+    model_parser.add_argument('--inp_embeddings_path')
+    model_parser.add_argument('--out_embeddings_path')
 
     args = parser.parse_args()
 
