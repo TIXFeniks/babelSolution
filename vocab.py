@@ -13,6 +13,10 @@ class Vocab:
     def remove_bpe(s):
         return s.replace('@@ ', '').replace("&apos;", "'").replace(" '", "'")  # TODO: make this generic
 
+    @staticmethod
+    def remove_bpe_many(sentences):
+        return [Vocab.remove_bpe(s) for s in sentences]
+
     def __init__(self, tokens):
         tokens = tuple(tokens)
         assert len(tokens) == len(set(tokens)), "tokens must be unique"
@@ -99,7 +103,7 @@ class Vocab:
     def from_file(cls, voc_path):
         """ Parses vocab from a .voc file """
         tokens = set()
-        with open(voc_path, 'r') as f:
+        with open(voc_path, 'r', encoding='utf-8') as f:
             for line in f:
                 token = line.split(" ")[0]
                 tokens.update([token])
