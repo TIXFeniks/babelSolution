@@ -11,7 +11,7 @@ from pandas import ewma
 from vocab import Vocab
 from src.training_utils import *
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
-from batch_iterator import iterate_minibatches
+
 
 def run_model(model_name, config):
     """Loads model and runs it on data"""
@@ -50,9 +50,9 @@ def run_model(model_name, config):
         if model_name == 'gnmt':
             sy_translations = model.symbolic_translate(inp, greedy=True)[0]
         elif model_name == 'transformer':
-            sy_translations = model.symbolic_translate(inp, mode='greedy', max_len=100).best_out
+            sy_translations = model.symbolic_translate(inp).best_out
         else:
-            raise ValueError('Model "{}" is unkown'.format(name))
+            raise ValueError('Model "{}" is unkown'.format(model))
 
         translations = []
 
@@ -83,7 +83,7 @@ def main():
     args = parser.parse_args()
 
     config = vars(args)
-    config = dict(filter(lambda x: x[1], config.items())) # Getting rid of None vals
+    config = dict(filter(lambda x: x[1], config.items()))  # Getting rid of None vals
 
     print('Running %s model!' % args.model)
     run_model(args.model, config)

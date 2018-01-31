@@ -507,7 +507,7 @@ class Model(TranslateModel):
         self.debug = hp.get('debug', None)
 
         # Parameters
-        self.transformer = Transformer('mod', inp_voc, out_voc, **hp)
+        self.transformer = Transformer(name, inp_voc, out_voc, **hp)
 
         projection_matrix = None
         if hp.get('dwwt', False):

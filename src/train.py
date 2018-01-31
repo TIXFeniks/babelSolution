@@ -13,7 +13,6 @@ from pandas import ewma
 from vocab import Vocab
 from src.training_utils import *
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
-from batch_iterator import iterate_minibatches
 
 
 def train_model(model_name, config):

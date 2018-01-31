@@ -16,15 +16,21 @@ else
 fi
 
 if [ -z "$3" ]; then
-	tokens=4000
+	tokens1=4000
 else
-	tokens=$3
+	tokens1=$3
 fi
 
 if [ -z "$4" ]; then
+	tokens2=4000
+else
+	tokens2=$4
+fi
+
+if [ -z "$5" ]; then
 	joint_dict=false
 else
-	joint_dict=$4
+	joint_dict=$5
 fi
 
 
@@ -65,14 +71,16 @@ done
 
 if [ $joint_dict = true ]; then
 	echo "Learning joint ..."
-	$subword_nmt/learn_joint_bpe_and_vocab.py -i $data/tok_all_1.txt $data/tok_all_2.txt -s $tokens -o $data/1.bpe --write-vocabulary $data/1.voc $data/2.voc
+	$subword_nmt/learn_joint_bpe_and_vocab.py -i $data/tok_all_1.txt $data/tok_all_2.txt -s $tokens1 -o $data/1.bpe --write-vocabulary $data/1.voc $data/2.voc
 	cp $data/1.bpe $data/2.bpe
 else
-	for lang in 1 2
-	do
-		echo "Learning voc ${lang} ..."
-		$subword_nmt/learn_joint_bpe_and_vocab.py -i $data/tok_all_$lang.txt -s $tokens -o $data/$lang.bpe --write-vocabulary $data/$lang.voc
-	done
+#	for lang in 1 2
+#	do
+	echo "Learning voc 1 ..."
+	$subword_nmt/learn_joint_bpe_and_vocab.py -i $data/tok_all_1.txt -s $tokens1 -o $data/1.bpe --write-vocabulary $data/1.voc
+	echo "Learning voc 2 ..."
+	$subword_nmt/learn_joint_bpe_and_vocab.py -i $data/tok_all_2.txt -s $tokens2 -o $data/2.bpe --write-vocabulary $data/2.voc
+#	done
 fi
 
 

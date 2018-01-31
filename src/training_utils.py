@@ -5,7 +5,6 @@ import tensorflow as tf
 
 from vocab import Vocab
 from bleu import compute_bleu
-from batch_iterator import iterate_minibatches
 from models.gnmt_lstm import AttentiveTranslationModel
 from models.transformer_other import Model
 
@@ -99,3 +98,32 @@ def create_optimizer(hp):
     beta2 = hp.get('beta2', 0.98)
 
     return tf.train.AdamOptimizer(learning_rate=lr, beta2=beta2)
+
+
+def iterate_minibatches(*to_split, **kwargs):
+    """
+        generates batches from the data, passed as first arguments
+
+        arguments:
+        -batchsize: the number of rows in a batch
+        -shuffle: if True shuffles the data and yields shuffled batches
+    """
+    batchsize = kwargs.get('batchsize', 1)
+    shuffle = kwargs.get('shuffle', False)
+
+    res = [np.array(x) for x in to_split]
+    size = res[0].shape[0]
+
+    for x in res:
+        assert x.shape[0] == size
+
+    if shuffle:
+        indices = np.arange(size)
+        np.random.shuffle(indices)
+
+    for start_idx in range(0, size, batchsize):
+        if shuffle:
+            excerpt = indices[start_idx:start_idx + batchsize]
+        else:
+            excerpt = slice(start_idx, start_idx + batchsize)
+        yield [x[excerpt] for x in res]
