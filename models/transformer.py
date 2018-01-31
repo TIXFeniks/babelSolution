@@ -242,16 +242,16 @@ class Transformer:
         self.normalize_out = normalize_out
 
         with tf.variable_scope(name):
-            max_voc_size = max(inp_voc.size(), out_voc.size())
+            max_voc_size = max(len(inp_voc), len(out_voc))
             self.emb_inp = Embedding(
-                'emb_inp', max_voc_size if share_emb else inp_voc.size(), emb_size,
+                'emb_inp', max_voc_size if share_emb else len(inp_voc), emb_size,
                 initializer=tf.random_normal_initializer(0, emb_size**-.5))
 
             emb_out_matrix = None
             if share_emb:
                 emb_out_matrix = self.emb_inp.mat
             self.emb_out = Embedding(
-                'emb_out', max_voc_size if share_emb else out_voc.size(), emb_size,
+                'emb_out', max_voc_size if share_emb else len(out_voc), emb_size,
                 matrix=emb_out_matrix,
                 initializer=tf.random_normal_initializer(0, emb_size**-.5))
 
