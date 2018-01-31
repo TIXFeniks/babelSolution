@@ -12,8 +12,8 @@ from pandas import ewma
 from bleu import compute_bleu
 from models.gnmt_lstm import AttentiveTranslationModel
 from vocab import Vocab
-from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model
-from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, should_stop_early
+from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model, should_stop_early
+from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
 from batch_iterator import iterate_minibatches
 
 MODEL_NAME = 'super_gnmt_model'
@@ -48,7 +48,7 @@ def train_gnmt(config):
     lr = hp.get('lr', 1e-4)
     use_early_stopping = hp.get('use_early_stopping', False)
 
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=config.get('gpu_memory_fraction', 0.3))
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=config.get('gpu_memory_fraction', 1))
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         model = AttentiveTranslationModel(MODEL_NAME, inp_voc, out_voc, emb_size, hid_size, attn_size)
@@ -104,6 +104,7 @@ def train_gnmt(config):
         val_scores = []
 
         def save_model(i, is_last_model=False):
+            print('Saving the model')
             if is_last_model:
                 save_path = '{}/model.npz'.format(model_path)
             else:
@@ -150,6 +151,7 @@ def train_gnmt(config):
 
                     if use_early_stopping and should_stop_early(val_scores, config.get('early_stopping_last_n')):
                         should_stop = True
+                        print('Early stopping.')
                         break
 
                 if config.get('plot') and (i+1) % 10 == 0:
@@ -166,6 +168,7 @@ def train_gnmt(config):
 
                 if config.get('max_num_iters') and num_iters_done == config.get('max_num_iters'):
                     should_stop = True
+                    print('Maximum amount of iterations reached. Stopping.')
                     break
 
             epoch +=1
@@ -201,8 +204,6 @@ def main():
     args = parser.parse_args()
 
     if args.model == 'gnmt':
-        print('Training gnmt!')
-
         config = vars(args)
         config = dict(filter(lambda x: x[1], config.items())) # Getting rid of None vals
 
