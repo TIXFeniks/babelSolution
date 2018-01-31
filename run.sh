@@ -13,12 +13,9 @@ cd /nmt
 # Training the model
 PYTHONPATH=/nmt python3.6 /nmt/src/train.py transformer \
             --data_path="$DATA_PATH" \
-            --batch_size=64 \
-            --hp_file=/nmt/hp_files/mini_transformer.json \
-            --gpu_memory_fraction=0.5 \
-            --validate_every=1000 \
-            --save_every=500 \
-            --max_epochs=100 \
+            --hp_file_path=/nmt/hp_files/mini_transformer.json \
+            --validate_every=500 \
+            --max_time_seconds=21600 \
             --use_early_stopping=True \
             --early_stopping_last_n=10
 
@@ -28,6 +25,5 @@ PYTHONPATH=/nmt python3.6 /nmt/src/run.py transformer \
             --model_path=/nmt/trained_models/transformer/model.npz \
             --input_path="$DATA_PATH/bpe_input.txt" \
             --output_path="$OUTPUT_DATA_PATH/output.txt" \
-            --gpu_memory_fraction=0.5 \
-            --hp_file=/nmt/hp_files/mini_transformer.json \
-            --run_batch_size=64
+            --hp_file_path=/nmt/hp_files/mini_transformer.json \
+            --batch_size_on_validation=64

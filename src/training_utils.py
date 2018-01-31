@@ -82,3 +82,19 @@ def create_model(name, inp_voc, out_voc, hp):
         return Model(name, inp_voc, out_voc, **hp)
     else:
         raise ValueError('Model "{}" is unkown'.format(name))
+
+
+def create_gpu_options(config):
+    gpu_options = tf.GPUOptions(allow_growth=True)
+
+    if config.get('gpu_memory_fraction'):
+        gpu_options.per_process_gpu_memory_fraction = config.get('gpu_memory_fraction', 0.95)
+
+    return gpu_options
+
+
+def create_optimizer(hp):
+    lr = hp.get('lr', 1e-4)
+    beta2 = hp.get('beta2', 0.98)
+
+    return tf.train.AdamOptimizer(learning_rate=lr, beta2=beta2)
