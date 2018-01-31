@@ -39,7 +39,7 @@ def train_model(model_name, config):
     lr = hp.get('lr', 1e-4)
 
     use_early_stopping = hp.get('use_early_stopping', False)
-    
+
     gpu_options = tf.GPUOptions(allow_growth=True)
     if config.get('gpu_memory_fraction'):
         gpu_options.per_process_gpu_memory_fraction=config.get('gpu_memory_fraction',0.95)
@@ -143,7 +143,6 @@ def train_model(model_name, config):
 
                 if (num_iters_done+1) % config.get('validate_every', 500) == 0:
                     print('Validating')
-                    val_score = compute_bleu_for_model(model, sess, model.inp_voc, model.out_voc, src_val, dst_val)
                     val_score = compute_bleu_for_model(model, sess, model.inp_voc, model.out_voc, src_val, dst_val, model_type=model_name)
                     val_scores.append(val_score)
                     print('Validation BLEU: {:0.3f}'.format(val_score))
