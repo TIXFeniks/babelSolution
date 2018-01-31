@@ -192,7 +192,8 @@ class Model(TranslateModel):
 
     def get_logits(self, dec_state, **flags):
         trans_logits = self.logits(dec_state.rdo)
-        lm_logits = self.lm(dec_state.out_seq, is_train=False)
+        lm_logits = self.lm(dec_state.out_seq, is_train=False, after_eos=True)[:, -1]
+        assert trans_logits.shape.ndims == lm_logits.shape.ndims == 2
 
         gates = self.gate_out(self.gate_hid(dec_state.rdo))
         trans_gate, lm_gate = tf.unstack(gates[..., None], axis=-2)
