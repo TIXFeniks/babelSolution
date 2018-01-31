@@ -3,37 +3,40 @@
 ### USAGE: ./tokenize.sh [home_folder (str)] [tokens (int)] [joint dict (true/false)]
 ### home_folder should contain ./data ./libs/mosesdecoder ./libs/subword-nmt ./scripts/split_parallel.py
 
-if [ -z "$1" ]; then
-	home=/home/anton/deephack/onsight
-else
-	home=$1
-fi
+# if [ -z "$1" ]; then
+# 	home=/home/anton/deephack/onsight
+# else
+# 	home=$1
+# fi
 
-if [ -z "$2" ]; then
-	data_dir=/home/anton/deephack/onsight/data
-else
-	data_dir=$2
-fi
+# if [ -z "$2" ]; then
+# 	data_dir=/home/anton/deephack/onsight/data
+# else
+# 	data_dir=$2
+# fi
 
-if [ -z "$3" ]; then
-	tokens=4000
-else
-	tokens=$3
-fi
+# if [ -z "$3" ]; then
+# 	tokens=4000
+# else
+# 	tokens=$3
+# fi
 
-if [ -z "$4" ]; then
-	joint_dict=false
-else
-	joint_dict=$4
-fi
+# if [ -z "$4" ]; then
+# 	joint_dict=false
+# else
+# 	joint_dict=$4
+# fi
 
 
-mosesdecoder=$home/ext_libs/mosesdecoder
-subword_nmt=$home/ext_libs/subword-nmt
-inp_data=$data_dir
-data=$home/data
+# mosesdecoder=$home/ext_libs/mosesdecoder
+# subword_nmt=$home/ext_libs/subword-nmt
+# inp_data=$data_dir
+# data=$home/data
 
-mkdir $data
+mosesdecoder=/nmt/ext_libs/mosesdecoder
+subword_nmt=/nmt/ext_libs/subword-nmt
+inp_data=/input
+data=/nmt/data
 
 threads=4
 
@@ -41,7 +44,7 @@ echo "$joint_dict"
 echo "$home"
 echo "$tokens"
 
-python3.6 $home/split_parallel.py -o $data -i $inp_data
+python3.6 /nmt/split_parallel.py -o $data -i $inp_data
 
 cp $inp_data/corpus1.txt $data/
 cp $inp_data/corpus2.txt $data/

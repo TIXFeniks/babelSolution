@@ -4,6 +4,7 @@ DATA_PATH="/nmt/data"
 INPUT_DATA_PATH="/input"
 OUTPUT_DATA_PATH="/output"
 
+mkdir /nmt/data
 # Preparing data
 /nmt/tokenize.sh /nmt "$INPUT_DATA_PATH"
 
