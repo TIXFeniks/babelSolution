@@ -3,6 +3,8 @@ import tensorflow as tf
 from functools import lru_cache
 from lib.smx import sliced_argmax
 from lib.utils import nested_map, is_namedtuple
+from lib.inference import GreedyInference, BeamSearchInference
+
 
 class TranslateModel:
 
