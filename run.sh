@@ -14,10 +14,10 @@ cd /nmt
 PYTHONPATH=/nmt python3.6 /nmt/src/train.py transformer \
             --data_path="$DATA_PATH" \
             --hp_file_path=/nmt/hp_files/mini_transformer.json \
-            --validate_every=500 \
+            --validate_every=100 \
             --max_time_seconds=21600 \
             --use_early_stopping=True \
-            --early_stopping_last_n=10
+            --early_stopping_last_n=5
 
 # Running the model
 PYTHONPATH=/nmt python3.6 /nmt/src/run.py transformer \

@@ -145,10 +145,10 @@ def train_model(model_name, config):
 
                 num_iters_done += 1
 
-                if config.get('max_seconds'):
+                if config.get('max_time_seconds'):
                     seconds_elapsed = time()-training_start_time
 
-                    if seconds_elapsed > config.get('max_seconds'):
+                    if seconds_elapsed > config.get('max_time_seconds'):
                         print('Maximum allowed training time reached. Training took %s. Stopping.' % seconds_elapsed)
                         should_start_next_epoch = False
                         break
@@ -158,6 +158,9 @@ def train_model(model_name, config):
             if config.get('max_epochs') and config.get('max_epochs') == epoch:
                 print('Maximum amount of epochs reached. Stopping.')
                 break
+
+        print('Validation scores:')
+        print(val_scores)
 
         # Training is done!
         # Let's check the val score of the model and if it's good — save it
@@ -186,7 +189,7 @@ def main():
     parser.add_argument('--use_early_stopping', type=bool)
     parser.add_argument('--early_stopping_last_n', type=int)
     parser.add_argument('--max_epochs', type=int)
-    parser.add_argument('--max_seconds', type=int)
+    parser.add_argument('--max_time_seconds', type=int)
 
     parser.add_argument('--gpu_memory_fraction', type=float)
 
