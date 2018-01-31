@@ -13,6 +13,10 @@ class Vocab:
     def remove_bpe(s):
         return s.replace('@@ ', '').replace("&apos;", "'").replace(" '", "'")  # TODO: make this generic
 
+    @staticmethod
+    def remove_bpe_many(sentences):
+        return [Vocab.remove_bpe(s) for s in sentences]
+
     def __init__(self, tokens):
         tokens = tuple(tokens)
         assert len(tokens) == len(set(tokens)), "tokens must be unique"
