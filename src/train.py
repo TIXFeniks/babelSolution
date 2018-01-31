@@ -15,6 +15,7 @@ from vocab import Vocab
 from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, should_stop_early
 from batch_iterator import iterate_minibatches
+from models.transformer_other import Model 
 
 MODEL_NAME = 'super_transformer_model'
 
