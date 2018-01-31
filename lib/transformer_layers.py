@@ -20,6 +20,7 @@ class TransformerEncoder:
             res_steps='nlda',
             normalize_out=False,
             rescale_emb=False,
+            allow_lookahead=True,
             dropout=0.,
             **_kwargs
     ):
@@ -37,6 +38,8 @@ class TransformerEncoder:
         self.inp_voc = inp_voc
         self.emb_size = self.hid_size = hid_size
         self.ff_size = ff_size = ff_size or hid_size
+        self.allow_lookahead = allow_lookahead
+
 
         with tf.variable_scope(name):
             if self.inp_voc is not None:
@@ -83,7 +86,7 @@ class TransformerEncoder:
         if enc_inp.shape.ndims == 2 and enc_inp.dtype.is_integer:
             assert self.inp_voc is not None, "TransformerEncoder must have inp_voc to process token indices"
             attn_mask = make_attn_mask(enc_inp, self.inp_voc.eos,
-                                       allow_lookahead=True,
+                                       allow_lookahead=self.allow_lookahead,
                                        allow_past_eos=False)
             enc_inp = self.emb_inp(enc_inp)  # [batch_size * ninp * emb_dim]
             if self.rescale_emb:
