@@ -652,3 +652,6 @@ class Model(TranslateModel):
 
     def get_attnP(self, dec_state, **kwargs):
         return dec_state.attnP
+
+    def get_logits(self, dec_state, **flags):
+        return self.logits(dec_state)
