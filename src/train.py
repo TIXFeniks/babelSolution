@@ -8,7 +8,6 @@ import tensorflow as tf
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from pandas import ewma
-from sklearn.model_selection import train_test_split
 
 from bleu import compute_bleu
 from models.gnmt_lstm import AttentiveTranslationModel
@@ -28,14 +27,15 @@ def train_gnmt(config):
     if not os.path.isdir('trained_models'): os.mkdir('trained_models')
     if not os.path.isdir(model_path): os.mkdir(model_path)
 
-    src_path = '{}/bpe_parallel1.txt'.format(config.get('data_path'))
-    dst_path = '{}/bpe_parallel2.txt'.format(config.get('data_path'))
+    src_train_path = '{}/bpe_parallel_train1.txt'.format(config.get('data_path'))
+    dst_train_path = '{}/bpe_parallel_train2.txt'.format(config.get('data_path'))
+    src_val_path = '{}/bpe_parallel_val1.txt'.format(config.get('data_path'))
+    dst_val_path = '{}/bpe_parallel_val2.txt'.format(config.get('data_path'))
 
-    src_data = open(src_path, 'r', encoding='utf-8').read().splitlines()
-    dst_data = open(dst_path, 'r', encoding='utf-8').read().splitlines()
-
-    split = train_test_split(src_data, dst_data, test_size=config.get('val_split_size', 0.1), random_state=42)
-    src_train, src_val, dst_train, dst_val = split
+    src_train = open(src_train_path, 'r', encoding='utf-8').read().splitlines()
+    dst_train = open(dst_train_path, 'r', encoding='utf-8').read().splitlines()
+    src_val = open(src_val_path, 'r', encoding='utf-8').read().splitlines()
+    dst_val = open(dst_val_path, 'r', encoding='utf-8').read().splitlines()
 
     inp_voc = Vocab.from_file('{}/1.voc'.format(config.get('data_path')))
     out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
@@ -74,7 +74,6 @@ def train_gnmt(config):
 
         # Loading pretrained model
         if config.get('pretrained_model_path'):
-            # model_weights_path = open(config.get('pretrained_model_path'), 'rb')
             w_values = np.load(config.get('pretrained_model_path'))
 
             curr_var_names = set(w.name for w in weights)
@@ -100,6 +99,7 @@ def train_gnmt(config):
 
         batch_size = config.get('batch_size', 16)
         batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
+        epoch = 0
         loss_history = []
         val_scores = []
 
@@ -126,7 +126,8 @@ def train_gnmt(config):
                     # Saving model
                     w_values = sess.run(weights)
                     weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
-                    np.savez('{}/model.iter-{}.npz'.format(model_path, i+1), **weights_dict)
+                    # TODO(universome): take latest model
+                    np.savez('{}/model.npz'.format(model_path, i+1), **weights_dict)
 
                     # Saving optimizer state
                     state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
@@ -173,6 +174,7 @@ def main():
     model_parser.add_argument('--val_split_size', type=float)
     model_parser.add_argument('--inp_embeddings_path')
     model_parser.add_argument('--out_embeddings_path')
+    model_parser.add_argument('--use_early_stopping', type=bool)
     model_parser.add_argument('--max_epochs', type=int)
 
     args = parser.parse_args()

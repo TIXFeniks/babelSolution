@@ -43,11 +43,11 @@ def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val):
     src_val_ix = inp_voc.tokenize_many(src_val)
 
     inp = tf.placeholder(tf.int32, [None, None])
-    sy_translations = model.symbolic_translate(inp)[0]
+    sy_translations = model.symbolic_translate(inp, greedy=True)[0]
 
     translations = []
 
-    for batch in iterate_minibatches(src_val_ix, batchsize=7):
+    for batch in iterate_minibatches(src_val_ix, batchsize=64):
         translations += sess.run([sy_translations], feed_dict={inp: batch[0]})[0].tolist()
 
     outputs = out_voc.detokenize_many(translations, unbpe=True)
