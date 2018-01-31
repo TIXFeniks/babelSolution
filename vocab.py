@@ -103,7 +103,7 @@ class Vocab:
     def from_file(cls, voc_path):
         """ Parses vocab from a .voc file """
         tokens = set()
-        with open(voc_path, 'r') as f:
+        with open(voc_path, 'r', encoding='utf-8') as f:
             for line in f:
                 token = line.split(" ")[0]
                 tokens.update([token])
