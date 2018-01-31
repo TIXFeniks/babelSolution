@@ -30,7 +30,10 @@ fi
 
 mosesdecoder=$home/ext_libs/mosesdecoder
 subword_nmt=$home/ext_libs/subword-nmt
-data=$data_dir
+inp_data=$data_dir
+data=$home/data
+
+mkdir $data
 
 threads=4
 
@@ -38,7 +41,12 @@ echo "$joint_dict"
 echo "$home"
 echo "$tokens"
 
-python3.6 $home/split_parallel.py -o $data -i $data
+python3.6 $home/split_parallel.py -o $data -i $inp_data
+
+cp $inp_data/corpus1.txt $data/
+cp $inp_data/corpus2.txt $data/
+cp $inp_data/input.txt $data/
+
 
 for lang in 1 2
 do

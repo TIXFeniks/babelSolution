@@ -12,8 +12,8 @@ from pandas import ewma
 from bleu import compute_bleu
 from models.gnmt_lstm import AttentiveTranslationModel
 from vocab import Vocab
-from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model
-from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, should_stop_early
+from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model, should_stop_early
+from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
 from batch_iterator import iterate_minibatches
 from models.transformer_other import Model 
 
@@ -211,7 +211,7 @@ def train_gnmt(config):
     lr = hp.get('lr', 1e-4)
     use_early_stopping = hp.get('use_early_stopping', False)
 
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=config.get('gpu_memory_fraction', 0.3))
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=config.get('gpu_memory_fraction', 1))
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         model = AttentiveTranslationModel(MODEL_NAME, inp_voc, out_voc, emb_size, hid_size, attn_size)
@@ -250,6 +250,7 @@ def train_gnmt(config):
         if config.get('optimizer_state_path'):
             pass # TODO(universome): load optimizer state
 
+        # TODO(universome): embeddings will be in a different format
         if config.get('inp_embeddings_path'):
             embeddings = np.load(config.get('inp_embeddings_path'))['arr_0'].astype(np.float32)
             sess.run(tf.assign(model.emb_inp.trainable_weights[0], tf.constant(embeddings)))
@@ -261,12 +262,12 @@ def train_gnmt(config):
         initialize_uninitialized_variables(sess)
 
         batch_size = config.get('batch_size', 16)
-        batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
         epoch = 0
         loss_history = []
         val_scores = []
 
         def save_model(i, is_last_model=False):
+            print('Saving the model')
             if is_last_model:
                 save_path = '{}/model.npz'.format(model_path)
             else:
@@ -287,6 +288,8 @@ def train_gnmt(config):
         should_stop = False # We need this var to break outer loop
 
         while not should_stop:
+            batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
+
             for i, (batch_src, batch_dst) in enumerate(batches):
                 batch_src_ix = inp_voc.tokenize_many(batch_src)
                 batch_dst_ix = out_voc.tokenize_many(batch_dst)
@@ -313,6 +316,7 @@ def train_gnmt(config):
 
                     if use_early_stopping and should_stop_early(val_scores, config.get('early_stopping_last_n')):
                         should_stop = True
+                        print('Early stopping.')
                         break
 
                 if config.get('plot') and (i+1) % 10 == 0:
@@ -329,6 +333,7 @@ def train_gnmt(config):
 
                 if config.get('max_num_iters') and num_iters_done == config.get('max_num_iters'):
                     should_stop = True
+                    print('Maximum amount of iterations reached. Stopping.')
                     break
 
             epoch +=1
@@ -353,7 +358,6 @@ def main():
     model_parser.add_argument('--optimizer_state_path')
     model_parser.add_argument('--validate_every', type=int)
     model_parser.add_argument('--save_every', type=int)
-    model_parser.add_argument('--val_split_size', type=float)
     model_parser.add_argument('--inp_embeddings_path')
     model_parser.add_argument('--out_embeddings_path')
     model_parser.add_argument('--max_num_iters', type=int)
@@ -364,8 +368,6 @@ def main():
     args = parser.parse_args()
 
     if args.model == 'gnmt':
-        print('Training gnmt!')
-
         config = vars(args)
         config = dict(filter(lambda x: x[1], config.items())) # Getting rid of None vals
 
