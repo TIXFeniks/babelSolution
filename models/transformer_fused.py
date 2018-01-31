@@ -19,7 +19,7 @@ class Model(TranslateModel):
     DecState = namedtuple("transformer_state", ['enc_out', 'enc_attn_mask', 'attnP', 'rdo', 'out_seq', 'offset',
                                                 'emb', 'dec_layers', 'dec_enc_kv', 'dec_dec_kv'])
 
-    def __init__(self, name, inp_voc, out_voc, lm, gate_hid_size=None **hp):
+    def __init__(self, name, inp_voc, out_voc, lm, gate_hid_size=None, **hp):
         self.name = name
         self.inp_voc = inp_voc
         self.out_voc = out_voc
