@@ -40,12 +40,18 @@ def batch_generator_over_dataset(src, dst, batch_size=16, batches_per_epoch=None
         yield (batch_src, batch_dst)
 
 
-def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val):
+def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_type = 'gnmt'):
     src_val_ix = inp_voc.tokenize_many(src_val)
-
+    
     inp = tf.placeholder(tf.int32, [None, None])
-    sy_translations = model.symbolic_translate(inp, greedy=True)[0]
-
+    
+    sy_translations = None
+    if model_type == 'gnmt':
+        sy_translations = model.symbolic_translate(inp, greedy=True)[0]
+    elif model_type == 'transformer':
+        sy_translations = model.symbolic_translate(inp, mode='greedy', max_len=100).best_out
+    else:
+        raise NotImplemented("Unknown model")
     translations = []
 
     for batch in iterate_minibatches(src_val_ix, batchsize=64):
