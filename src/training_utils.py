@@ -41,7 +41,7 @@ def batch_generator_over_dataset(src, dst, batch_size=16, batches_per_epoch=None
         yield (batch_src, batch_dst)
 
 
-def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config):
+def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config, max_len=200):
     src_val_ix = inp_voc.tokenize_many(src_val)
 
     inp = tf.placeholder(tf.int32, [None, None])
@@ -55,9 +55,10 @@ def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, mode
         raise NotImplemented("Unknown model")
 
     for batch in iterate_minibatches(src_val_ix, batchsize=config.get('batch_size_for_inference', 64)):
-        translations += sess.run([sy_translations], feed_dict={inp: batch[0]})[0].tolist()
 
-    outputs = out_voc.detokenize_many(translations, unbpe=True)
+        translations += sess.run([sy_translations], feed_dict={inp: batch[0][:, :max_len]})[0].tolist()
+
+    outputs = out_voc.detokenize_many(translations, unbpe=True, deprocess=True)
     targets = Vocab.remove_bpe_many(dst_val)
     references = [[t] for t in targets]
 

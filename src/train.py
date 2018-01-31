@@ -12,7 +12,7 @@ from pandas import ewma
 
 from vocab import Vocab
 from src.training_utils import *
-from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
+from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, all_shapes_equal
 
 
 def train_model(model_name, config):
@@ -34,6 +34,7 @@ def train_model(model_name, config):
 
     inp_voc = Vocab.from_file('{}/1.voc'.format(config.get('data_path')))
     out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
+    max_len = config.get('max_len', 200)
 
     # Hyperparameters
     hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
@@ -90,36 +91,29 @@ def train_model(model_name, config):
         initialize_uninitialized_variables(sess)
 
         assigns = []
-        weights_dict = {w.name[len(MODEL_NAME)+1:]: w for w in weights}
+        weights_by_common_name = {w.name[len(model_name)+1:]: w for w in weights}
         if config.get('target-lm-path'):
             with np.load(config.get('target-lm-path')) as dic:
                 for key in dic: # decoder_init
                     w_lm = dic[key]
                     weights_key = key.replace(
                         'lm/','').replace('main/','').replace("enc",'dec').replace("inp","out")
-                    w_m = weights_dict[weights_key]
+                    w_var = weights_by_common_name[weights_key]
 
-                    _shp = tf.shape(w_m)
-                    shp1 = tuple(sess.run([_shp[i] for i in range(w_m.shape.ndims)]))
-                    shp2 = w_lm.shape
-                    assert  shp1 == shp2, AssertionError(
-                        "shapes must be the same for {}, provided shapes are {} and {}".format(key, shp1, shp2))
-                    assigns.append(tf.assign(w_m,w_lm))
+                    all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
+
+                    assigns.append(tf.assign(w_var,w_lm))
         if config.get('src-lm-path'):
             with np.load(config.get("src-lm-path")) as dic:
                 for key in dic: # encoder_init
                     w_lm = dic[key]
                     weights_key = key.replace('lm/','').replace('main/','')
-                    if "logits" in weights_key:
+                    if "logits" in weights_key: # encoder has no 'logits' layer for the logits to be initialised
                         continue
-                    w_m = weights_dict[weights_key]
+                    w_var = weights_by_common_name[weights_key]
 
-                    _shp = tf.shape(w_m)
-                    shp1 = tuple(sess.run([_shp[i] for i in range(w_m.shape.ndims)]))
-                    shp2 = w_lm.shape
-                    assert  shp1 == shp2, AssertionError(
-                        "shapes must be the same for {}, provided shapes are {} and {}".format(key, shp1, shp2))
-                    assigns.append(tf.assign(w_m,w_lm))
+                    all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
+                    assigns.append(tf.assign(w_var,w_lm))
         sess.run(assigns)
 
         batch_size = hp.get('batch_size', 16)
@@ -146,50 +140,55 @@ def train_model(model_name, config):
 
         while should_start_next_epoch:
             batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
+            with tqdm(batches) as t:
+                for batch_src, batch_dst in t:
 
-            for batch_src, batch_dst in batches:
-                batch_src_ix = inp_voc.tokenize_many(batch_src)
-                batch_dst_ix = out_voc.tokenize_many(batch_dst)
+                    # Note: we don't use voc.tokenize_many(batch, max_len=max_len)
+                    # cuz it forces batch length to be that long and we often get away with much less
+                    batch_src_ix = inp_voc.tokenize_many(batch_src)[:, :max_len]
+                    batch_dst_ix = out_voc.tokenize_many(batch_dst)[:, :max_len]
 
-                feed_dict = {inp: batch_src_ix, out: batch_dst_ix}
+                    feed_dict = {inp: batch_src_ix, out: batch_dst_ix}
 
-                loss_t = sess.run([train_step, loss], feed_dict)[1]
-                loss_history.append(np.mean(loss_t))
+                    loss_t = sess.run([train_step, loss], feed_dict)[1]
+                    loss_history.append(np.mean(loss_t))
 
-                print('Iterations done: {}. Loss: {:.2f}'.format(num_iters_done, loss_t))
+                    t.set_description('Iterations done: {}. Loss: {:.2f}'
+                                      .format(num_iters_done, ewma(np.array(loss_history[:-50]), span=50)[-1]))
 
-                if (num_iters_done+1) % config.get('validate_every', 500) == 0:
-                    print('Validating')
-                    val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config)
-                    val_scores.append(val_score)
-                    print('Validation BLEU: {:0.3f}'.format(val_score))
+                    if (num_iters_done+1) % config.get('validate_every', 500) == 0:
+                        print('Validating')
+                        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
+                                                           model_name, config, max_len=max_len)
+                        val_scores.append(val_score)
+                        print('Validation BLEU: {:0.3f}'.format(val_score))
 
-                    # Save model if this is our best model
-                    if np.argmax(val_scores) == len(val_scores)-1:
-                        print('Saving model because it has the highest validation BLEU.')
-                        save_model()
-                        save_optimizer_state(num_iters_done+1)
+                        # Save model if this is our best model
+                        if np.argmax(val_scores) == len(val_scores)-1:
+                            print('Saving model because it has the highest validation BLEU.')
+                            save_model()
+                            save_optimizer_state(num_iters_done+1)
 
-                    if use_early_stopping and should_stop_early(val_scores, config.get('early_stopping_last_n')):
-                        print('Model did not improve for last %s steps. Early stopping.' % config.get('early_stopping_last_n'))
-                        should_start_next_epoch = False
-                        break
+                        if use_early_stopping and should_stop_early(val_scores, config.get('early_stopping_last_n')):
+                            print('Model did not improve for last %s steps. Early stopping.' % config.get('early_stopping_last_n'))
+                            should_start_next_epoch = False
+                            break
 
-                num_iters_done += 1
+                    num_iters_done += 1
 
-                if config.get('max_time_seconds'):
-                    seconds_elapsed = time()-training_start_time
+                    if config.get('max_time_seconds'):
+                        seconds_elapsed = time()-training_start_time
 
-                    if seconds_elapsed > config.get('max_time_seconds'):
-                        print('Maximum allowed training time reached. Training took %s. Stopping.' % seconds_elapsed)
-                        should_start_next_epoch = False
-                        break
+                        if seconds_elapsed > config.get('max_time_seconds'):
+                            print('Maximum allowed training time reached. Training took %s. Stopping.' % seconds_elapsed)
+                            should_start_next_epoch = False
+                            break
 
-            epoch +=1
+                epoch +=1
 
-            if config.get('max_epochs') and config.get('max_epochs') == epoch:
-                print('Maximum amount of epochs reached. Stopping.')
-                break
+                if config.get('max_epochs') and config.get('max_epochs') == epoch:
+                    print('Maximum amount of epochs reached. Stopping.')
+                    break
 
         print('Validation scores:')
         print(val_scores)
@@ -197,7 +196,8 @@ def train_model(model_name, config):
         # Training is done!
         # Let's check the val score of the model and if it's good — save it
         print('Computing final validation score.')
-        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config)
+        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
+                                           model_name, config, max_len=max_len)
         print('Final validation BLEU is: {:0.3f}'.format(val_score))
 
         if val_score >= max(val_scores):
@@ -224,6 +224,7 @@ def main():
     parser.add_argument('--max_epochs', type=int)
     parser.add_argument('--max_time_seconds', type=int)
     parser.add_argument('--batch_size_for_inference', type=int)
+    parser.add_argument('--max_len', type=int)
 
     parser.add_argument('--gpu_memory_fraction', type=float)
 
