@@ -147,7 +147,6 @@ class TranslateModel:
             return GreedyInference(
                 model=self,
                 batch_placeholder=batch_placeholder,
-                sampling_strategy='best' if mode == 'greedy' else 'sample',
                 force_bos=self.hp.get('force_bos', False),
                 **flags)
 
