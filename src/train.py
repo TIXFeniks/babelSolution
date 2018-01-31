@@ -38,8 +38,6 @@ def train_model(model_name, config):
 
     # Hyperparameters
     hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
-
-    use_early_stopping = hp.get('use_early_stopping', False)
     gpu_options = create_gpu_options(config)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
@@ -154,7 +152,7 @@ def train_model(model_name, config):
                     loss_history.append(np.mean(loss_t))
 
                     t.set_description('Iterations done: {}. Loss: {:.2f}'
-                                      .format(num_iters_done, ewma(np.array(loss_history[:-50]), span=50)[-1]))
+                                      .format(num_iters_done, ewma(np.array(loss_history[-50:]), span=50)[-1]))
 
                     if (num_iters_done+1) % config.get('validate_every', 500) == 0:
                         print('Validating')
@@ -169,7 +167,7 @@ def train_model(model_name, config):
                             save_model()
                             save_optimizer_state(num_iters_done+1)
 
-                        if use_early_stopping and should_stop_early(val_scores, config.get('early_stopping_last_n')):
+                        if config.get('use_early_stopping') and should_stop_early(val_scores, config.get('early_stopping_last_n')):
                             print('Model did not improve for last %s steps. Early stopping.' % config.get('early_stopping_last_n'))
                             should_start_next_epoch = False
                             break
