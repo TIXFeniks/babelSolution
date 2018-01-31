@@ -77,7 +77,7 @@ class TranslateModel:
             # compute delta scores. If best_hypos == -1, best_scores == -inf, best_hypos are 0 to avoid IndexError
             best_delta_scores = best_scores - tf.gather(base_scores, tf.maximum(0, best_hypos))
 
-        elif sampling_strategy == 'random':
+        elif sampling_strategy == 'sample':
             logp = tf.nn.log_softmax(logits, 1)
 
             best_hypos = tf.range(0, n_hypos)[:, None]
@@ -87,7 +87,7 @@ class TranslateModel:
 
             best_delta_scores = tf.gather(tf.reshape(logp, [-1]), best_words_flat)
         else:
-            raise ValueError("sampling_strategy must be in ['random','greedy']")
+            raise ValueError("sampling_strategy must be in ['sample','greedy']")
 
         return (best_hypos, best_words, best_delta_scores)
 
