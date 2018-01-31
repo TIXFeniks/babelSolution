@@ -39,6 +39,8 @@ class GreedyInference:
             e.g. greedy=True or is_train=True
 
         """
+
+        print("Preparing GREEDY translate with params:", locals())
         self.batch_placeholder = batch_placeholder
         self.get_tracked_outputs = get_tracked_outputs
 
@@ -184,6 +186,7 @@ class BeamSearchInference:
                 performs sampling ~ softmax(logits/sampling_temperature)
 
         """
+        print("Preparing BEAM SEARCH translate with params:", locals())
         assert if_no_eos in ['last', 'initial']
         assert np.isfinite(beam_spread) or max_len != float('inf'), "Must set maximum length if beam_spread is infinite"
         # initialize fields
@@ -193,6 +196,8 @@ class BeamSearchInference:
         self.max_len = max_len if max_len is not None else 2 * inp_len + 3
         self.beam_size, self.beam_spread = beam_size, beam_spread
         self.force_bos, self.if_no_eos = force_bos, if_no_eos
+
+
 
         # actual beam search
         first_stack = self.create_initial_stack(model, batch_placeholder, force_bos=force_bos, **flags)

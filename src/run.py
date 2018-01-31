@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 from pandas import ewma
 
 from vocab import Vocab
-from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model, create_model
+from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model, create_model, iterate_minibatches
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
-from batch_iterator import iterate_minibatches
+
 
 def run_model(model_name, config):
     """Loads model and runs it on data"""
@@ -28,7 +28,7 @@ def run_model(model_name, config):
     
     gpu_options = tf.GPUOptions(allow_growth=True)
     if config.get('gpu_memory_fraction'):
-        gpu_options.per_process_gpu_memory_fraction=config.get('gpu_memory_fraction',0.95)
+        gpu_options.per_process_gpu_memory_fraction = config.get('gpu_memory_fraction', 0.95)
 
     print(gpu_options)
 
@@ -55,9 +55,9 @@ def run_model(model_name, config):
         if model_name == 'gnmt':
             sy_translations = model.symbolic_translate(inp, greedy=True)[0]
         elif model_name == 'transformer':
-            sy_translations = model.symbolic_translate(inp, mode='greedy', max_len=100).best_out
+            sy_translations = model.symbolic_translate(inp).best_out
         else:
-            raise ValueError('Model "{}" is unkown'.format(name))
+            raise ValueError('Model "{}" is unkown'.format(model))
 
         translations = []
 
@@ -88,7 +88,7 @@ def main():
     args = parser.parse_args()
 
     config = vars(args)
-    config = dict(filter(lambda x: x[1], config.items())) # Getting rid of None vals
+    config = dict(filter(lambda x: x[1], config.items()))  # Getting rid of None vals
 
     print('Running %s model!' % args.model)
     run_model(args.model, config)
