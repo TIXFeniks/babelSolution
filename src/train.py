@@ -158,7 +158,8 @@ def train_model(model_name, config):
 
                     if (num_iters_done+1) % config.get('validate_every', 500) == 0:
                         print('Validating')
-                        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config)
+                        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
+                                                           model_name, config, max_len=max_len)
                         val_scores.append(val_score)
                         print('Validation BLEU: {:0.3f}'.format(val_score))
 
@@ -195,7 +196,8 @@ def train_model(model_name, config):
         # Training is done!
         # Let's check the val score of the model and if it's good — save it
         print('Computing final validation score.')
-        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config)
+        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
+                                           model_name, config, max_len=max_len)
         print('Final validation BLEU is: {:0.3f}'.format(val_score))
 
         if val_score >= max(val_scores):
