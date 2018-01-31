@@ -28,7 +28,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python3.6
 
 RUN pip install tensorflow-gpu==1.4.0
 RUN pip install Cython
-RUN pip install tqdm pandas matplotlib fasttext keras
+RUN pip install tqdm pandas matplotlib fasttext keras sklearn
 
 RUN mkdir /nmt
 WORKDIR /nmt
