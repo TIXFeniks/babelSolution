@@ -93,6 +93,39 @@ def train_model(model_name, config):
 
         initialize_uninitialized_variables(sess)
 
+        assigns = []
+        weights_dict = {w.name[len(MODEL_NAME)+1:]: w for w in weights}
+        if config.get('target-lm-path'):
+            with np.load(config.get('target-lm-path')) as dic:
+                for key in dic: # decoder_init
+                    w_lm = dic[key]
+                    weights_key = key.replace(
+                        'lm/','').replace('main/','').replace("enc",'dec').replace("inp","out")
+                    w_m = weights_dict[weights_key]
+
+                    _shp = tf.shape(w_m)
+                    shp1 = tuple(sess.run([_shp[i] for i in range(w_m.shape.ndims)]))
+                    shp2 = w_lm.shape
+                    assert  shp1 == shp2, AssertionError(
+                        "shapes must be the same for {}, provided shapes are {} and {}".format(key, shp1, shp2))
+                    assigns.append(tf.assign(w_m,w_lm))
+        if config.get('src-lm-path'):
+            with np.load(config.get("src-lm-path")) as dic:
+                for key in dic: # encoder_init
+                    w_lm = dic[key]
+                    weights_key = key.replace('lm/','').replace('main/','')
+                    if "logits" in weights_key:
+                        continue
+                    w_m = weights_dict[weights_key]
+
+                    _shp = tf.shape(w_m)
+                    shp1 = tuple(sess.run([_shp[i] for i in range(w_m.shape.ndims)]))
+                    shp2 = w_lm.shape
+                    assert  shp1 == shp2, AssertionError(
+                        "shapes must be the same for {}, provided shapes are {} and {}".format(key, shp1, shp2))
+                    assigns.append(tf.assign(w_m,w_lm))
+        sess.run(assigns)
+        
         batch_size = config.get('batch_size', 16)
         epoch = 0
         loss_history = []
@@ -192,6 +225,8 @@ def main():
     parser.add_argument('--save_every', type=int)
     parser.add_argument('--inp_embeddings_path')
     parser.add_argument('--out_embeddings_path')
+    parser.add_argument('--target-lm-path')
+    parser.add_argument('--src-lm-path')
     parser.add_argument('--max_num_iters', type=int)
     parser.add_argument('--use_early_stopping', type=bool)
     parser.add_argument('--early_stopping_last_n', type=int)
