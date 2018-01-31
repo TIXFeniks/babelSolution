@@ -13,7 +13,7 @@ from bleu import compute_bleu
 from models.gnmt_lstm import AttentiveTranslationModel
 from vocab import Vocab
 from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model
-from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
+from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, should_stop_early
 from batch_iterator import iterate_minibatches
 
 MODEL_NAME = 'super_gnmt_model'
@@ -103,6 +103,16 @@ def train_gnmt(config):
         loss_history = []
         val_scores = []
 
+        def save_model(i, is_last_model=False):
+            if is_last_model:
+                save_path = '{}/model.npz'.format(model_path)
+            else:
+                save_path = '{}/model.iter-{}.npz'.format(model_path, i)
+
+            w_values = sess.run(weights)
+            weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
+            np.savez(save_path, **weights_dict)
+
         # TODO(universome): this does not work, but looks like we do not need it :|
         if config.get('plot'):
             plt.ion()
@@ -110,8 +120,11 @@ def train_gnmt(config):
             ax = fig.add_subplot(111)
             fig.show()
 
-        while True:
-            for i, (batch_src, batch_dst) in enumerate(tqdm(batches)):
+        num_iters_done = 0
+        should_stop = False # We need this var to break outer loop
+
+        while not should_stop:
+            for i, (batch_src, batch_dst) in enumerate(batches):
                 batch_src_ix = inp_voc.tokenize_many(batch_src)
                 batch_dst_ix = out_voc.tokenize_many(batch_dst)
 
@@ -123,11 +136,7 @@ def train_gnmt(config):
                 print('Iterations done: {}. Loss: {:.2f}'.format(i, loss_t))
 
                 if (i+1) % config.get('save_every', 500) == 0:
-                    # Saving model
-                    w_values = sess.run(weights)
-                    weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
-                    # TODO(universome): take latest model
-                    np.savez('{}/model.npz'.format(model_path, i+1), **weights_dict)
+                    save_model(i+1)
 
                     # Saving optimizer state
                     state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
@@ -139,7 +148,8 @@ def train_gnmt(config):
                     val_scores.append(val_score)
                     print('Validation BLEU: {:0.3f}'.format(val_score))
 
-                    if use_early_stopping and len(val_scores) > 0 and val_scores[-1] < val_score[-2]:
+                    if use_early_stopping and should_stop_early(val_scores, config.get('early_stopping_last_n')):
+                        should_stop = True
                         break
 
                 if config.get('plot') and (i+1) % 10 == 0:
@@ -152,10 +162,19 @@ def train_gnmt(config):
                     # fig.canvas.draw()
                     fig.show()
 
+                num_iters_done += 1
+
+                if config.get('max_num_iters') and num_iters_done == config.get('max_num_iters'):
+                    should_stop = True
+                    break
+
             epoch +=1
 
             if config.get('max_epochs') and config.get('max_epochs') == epoch:
                 break
+
+        save_model(i+1, True)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Run project commands')
@@ -174,7 +193,9 @@ def main():
     model_parser.add_argument('--val_split_size', type=float)
     model_parser.add_argument('--inp_embeddings_path')
     model_parser.add_argument('--out_embeddings_path')
+    model_parser.add_argument('--max_num_iters', type=int)
     model_parser.add_argument('--use_early_stopping', type=bool)
+    model_parser.add_argument('--early_stopping_last_n', type=int)
     model_parser.add_argument('--max_epochs', type=int)
 
     args = parser.parse_args()

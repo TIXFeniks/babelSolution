@@ -1,5 +1,6 @@
 from itertools import islice, chain
 
+import numpy as np
 import tensorflow as tf
 
 from vocab import Vocab
@@ -57,3 +58,10 @@ def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val):
     bleu = compute_bleu(references, outputs)[0]
 
     return bleu
+
+
+def should_stop_early(val_scores, use_last_n=5):
+    """Determines if the model does not improve by the validation scores"""
+    if len(val_scores) < use_last_n: return False
+
+    return np.argmax(val_scores[-5:]) is 0

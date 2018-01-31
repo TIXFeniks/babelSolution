@@ -9,7 +9,7 @@ OUTPUT_DATA_PATH="/output"
 # Training the model
 PYTHONPATH=. python3.6 src/train.py gnmt \
             --data_path="$INPUT_DATA_PATH" \
-            --batch_size=2 \
+            --batch_size=4 \
             --hp_file=hp_files/gnmt.json \
             --gpu_memory_fraction=0.5 \
             --validate_every=2 \
