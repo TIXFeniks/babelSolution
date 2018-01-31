@@ -7,9 +7,10 @@ PROJECT_DIR="/nmt"
 
 MODEL_NAME="transformer"
 HP_FILE_PATH="/nmt/hp_files/mini_transformer.json"
-BATCH_SIZE_FOR_INFERENCE=128
+BATCH_SIZE_FOR_INFERENCE=32
 MAX_TIME_SECONDS=21600
 VALIDATE_EVERY=10
+MAX_EPOCHS=5
 USE_EARLY_STOPPING=True
 EARLY_STOPPING_LAST_N=5
 
@@ -34,6 +35,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train.py" "$MODEL_NAME" \
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
             --use_early_stopping="$USE_EARLY_STOPPING" \
             --early_stopping_last_n="$EARLY_STOPPING_LAST_N"
+            --max_epochs="$MAX_EPOCHS"
 
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run.py" "$MODEL_NAME" \
