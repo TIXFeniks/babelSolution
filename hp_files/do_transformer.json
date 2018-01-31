@@ -4,7 +4,7 @@
     "num_heads": 4,
     "num_layers": 4,
     "rescale_emb": true,
-    "relu_dropout": 0.0,
+    "relu_dropout": 0.2,
     "res_dropout": 0.0,
     "attn_dropout": 0.0,
     "inp_emb_bias": true,
