@@ -43,7 +43,7 @@ class TransformerEncoder:
 
         self.emb_inp_bias = 0
         if inp_emb_bias:
-            self.emb_inp_bias = tf.get_variable('emb_inp_bias', shape=[1, 1, emb_size])
+            self.emb_inp_bias = tf.get_variable('emb_inp_bias', shape=[1, 1, self.emb_size])
 
         with tf.variable_scope(name):
             if self.inp_voc is not None:
