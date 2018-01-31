@@ -50,7 +50,7 @@ def run_model(model_name, config):
         if model_name == 'gnmt':
             sy_translations = model.symbolic_translate(inp, greedy=True)[0]
         elif model_name == 'transformer':
-            sy_translations = model.symbolic_translate(inp).best_out
+            sy_translations = model.symbolic_translate(inp, beam_size=6, len_alpha=0.6).best_out
         else:
             raise ValueError('Model "{}" is unkown'.format(model))
 
