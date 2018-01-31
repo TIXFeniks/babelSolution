@@ -48,7 +48,7 @@ class AttentiveTranslationModel:
         :return: a list of initial decoder state tensors
         """
         inp_lengths = infer_length(inp, self.inp_voc.eos)
-        enc_mask = infer_mask(inp, self.inp_voc.eos)
+        enc_mask = infer_mask(inp, self.inp_voc.eos, dtype= tf.float32)
         inp_emb = self.emb_inp(inp)
 
         enc_seq, enc_last = tf.nn.dynamic_rnn(
