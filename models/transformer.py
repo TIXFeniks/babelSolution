@@ -528,7 +528,7 @@ class Model(TranslateModel):
         enc_out, enc_attn_mask = self.transformer.encode(inp, inp_len, is_train)
         rdo = self.transformer.decode(out, out_len, out_reverse, enc_out, enc_attn_mask, is_train)
 
-        return rdo
+        return self.logits(rdo)
 
     def encode(self, batch, is_train=False, **kwargs):
         """
@@ -654,4 +654,4 @@ class Model(TranslateModel):
         return dec_state.attnP
 
     def get_logits(self, dec_state, **flags):
-        return self.logits(dec_state)
+        return self.logits(dec_state.rdo)
