@@ -19,8 +19,7 @@ class TransformerEncoder:
             num_layers_enc=1,
             res_steps='nlda',
             normalize_out=False,
-            allow_lookahead=True,
-            allow_past_eos=False,
+            rescale_emb=False,
             dropout=0.,
             **_kwargs
     ):
@@ -32,10 +31,12 @@ class TransformerEncoder:
 
         self.name = name
         self.normalize_out = normalize_out
-        self.allow_lookahead = allow_lookahead
-        self.allow_past_eos = allow_past_eos
+        self.rescale_emb = rescale_emb
         self.dropout = dropout
+        self.num_layers = num_layers_enc
         self.inp_voc = inp_voc
+        self.emb_size = self.hid_size = hid_size
+        self.ff_size = ff_size = ff_size or hid_size
 
         with tf.variable_scope(name):
             if self.inp_voc is not None:
@@ -78,23 +79,26 @@ class TransformerEncoder:
             if self.normalize_out:
                 self.enc_out_norm = LayerNorm('enc_out_norm', inp_size=hid_size)
 
-    def __call__(self, inp, attn_mask=None, is_train=False):
-        if inp.shape.ndims == 2 and inp.dtype.is_integer:
+    def __call__(self, enc_inp, attn_mask=None, is_train=False):
+        if enc_inp.shape.ndims == 2 and enc_inp.dtype.is_integer:
             assert self.inp_voc is not None, "TransformerEncoder must have inp_voc to process token indices"
-            attn_mask = make_attn_mask(inp, self.inp_voc.eos,
-                                       allow_lookahead=self.allow_lookahead,
-                                       allow_past_eos=self.allow_past_eos)
-            inp = self.emb_inp(inp)  # [batch_size * ninp * emb_dim]
-            assert inp.shape.ndims == 3, "input must have shape [batch, time, units]"
+            attn_mask = make_attn_mask(enc_inp, self.inp_voc.eos,
+                                       allow_lookahead=True,
+                                       allow_past_eos=False)
+            enc_inp = self.emb_inp(enc_inp)  # [batch_size * ninp * emb_dim]
+            if self.rescale_emb:
+                enc_inp *= self.emb_size ** .5
+
+            assert enc_inp.shape.ndims == 3, "input must have shape [batch, time, units]"
         else:
             assert attn_mask is not None, "attn_mask must be specified if inp is not int32"
-            assert inp.shape.ndims == 3, "input must have shape [batch, time, units]"
+            assert enc_inp.shape.ndims == 3, "input must have shape [batch, time, units]"
             assert attn_mask.shape.ndims == 4, "attn_mask must have shape [batch, 1, from_time, to_time]"
 
         with dropout_scope(is_train), tf.name_scope(self.name + '_enc'):
 
             # Embeddings
-            enc_inp = add_timing_signal(inp)
+            enc_inp = add_timing_signal(enc_inp)
 
             # Apply dropouts
             if is_dropout_enabled():
@@ -129,8 +133,8 @@ class TransformerDecoder:
             num_layers_dec=1,
             res_steps='nlda',
             normalize_out=False,
-            allow_lookahead=False,
-            allow_past_eos=False,
+            rescale_emb=False,
+            shift_right=False,
             dropout=0.,
             **_kwargs
     ):
@@ -142,10 +146,14 @@ class TransformerDecoder:
 
         self.name = name
         self.normalize_out = normalize_out
+        self.rescale_emb = rescale_emb
         self.dropout = dropout
         self.out_voc = out_voc
-        self.allow_lookahead = allow_lookahead
-        self.allow_past_eos = allow_past_eos
+        self.num_layers = num_layers_dec
+        self.emb_size = self.hid_size = hid_size
+        self.shift_right = shift_right
+        self.ff_size = ff_size = ff_size or hid_size
+
 
         with tf.variable_scope(name):
             if self.out_voc is not None:
@@ -193,7 +201,7 @@ class TransformerDecoder:
                 FeedforwardBlock(
                     'dec_ffn-%i' % i,
                     inp_size=hid_size,
-                    hid_size=ff_size or hid_size,
+                    hid_size=ff_size,
                     out_size=hid_size,
                     relu_dropout=0),
                 inp_size=hid_size,
@@ -211,14 +219,20 @@ class TransformerDecoder:
             assert self.out_voc is not None, "TransformerEncoder must have inp_voc to process token indices"
             if dec_attn_mask is None:
                 dec_attn_mask = make_attn_mask(dec_inp, self.out_voc.eos,
-                                               allow_lookahead=self.allow_lookahead,
-                                               allow_past_eos=self.allow_past_eos)
+                                               allow_lookahead=False,
+                                               allow_past_eos=False)
             dec_inp = self.emb_out(dec_inp)  # [batch_size * ninp * emb_dim]
+            if self.rescale_emb:
+                dec_inp *= self.emb_size ** .5
         else:
             assert dec_attn_mask is not None, "attn_mask must be specified if inp is not int32"
 
         assert dec_inp.shape.ndims == 3, "input must have shape [batch, time, units]"
         assert dec_attn_mask.shape.ndims == 4, "attn_mask must have shape [batch, 1, from_time, to_time]"
+
+        if self.shift_right:
+            # Shift right; drop embedding for last word
+            dec_inp = tf.pad(dec_inp, [[0, 0], [1, 0], [0, 0]])[:, :-1, :]
 
         with dropout_scope(is_train), tf.name_scope(self.name + '_dec'):
             dec_inp = add_timing_signal(dec_inp)

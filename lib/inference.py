@@ -4,8 +4,8 @@ Implements ingraph sampling and beam search for seq2seq models
 import sys
 import numpy as np
 import tensorflow as tf
-from tfnn.util import nested_map, is_scalar
-from tfnn.ops.sliced_argmax import sliced_argmax
+from lib.utils import nested_map
+from lib.tensor_utils import sliced_argmax, is_scalar
 from lib.tensor_utils import infer_length, infer_mask
 from collections import namedtuple
 from warnings import warn
@@ -25,7 +25,7 @@ class GreedyInference:
         loss = cmon_do_something(trans.best_out, trans.best_scores)
         sess.run(loss)
 
-        :type model: tfnn.task.seq2seq.inference.translate_model.TranslateModel
+        :type model: models.TranslateModel
         :param batch: a dictionary that contains symbolic tensor {'inp': input token ids, shape [batch_size,time]}
         :param max_len: maximum length of output sequence, defaults to 2*inp_len + 3
         :param force_bos: if True, forces zero-th output to be model.out_voc.bos. Otherwise lets model decide.
@@ -109,7 +109,7 @@ class GreedyInference:
 
     def step(self, model, stack, **flags):
         """
-        :type model: tfnn.task.seq2seq.inference.translate_model.TranslateModel
+        :type model: models.TranslateModel
         :param stack: beam search stack
         :return: new beam search stack
         """
@@ -282,7 +282,7 @@ class BeamSearchInference:
     def create_initial_stack(self, model, batch, **flags):
         """
         Creates initial stack for beam search by encoding inp and optionally forcing BOS as first output
-        :type model: tfnn.task.seq2seq.inference.TranslateModel
+        :type model: models.TranslateModel
         :param batch: model inputs - whatever model can eat for self.encode(batch,**tags)
         :param force_bos: if True, forces zero-th output to be model.out_voc.bos. Otherwise lets model decide.
         """
@@ -391,7 +391,7 @@ class BeamSearchInference:
     def beam_search_step(self, model, stack, **flags):
         """
         Performs one step of beam search decoding. Takes previous stack, returns next stack.
-        :type model: tfnn.task.seq2seq.inference.TranslateModel
+        :type model: models.TranslateModel
         :type stack: BeamSearchDecoder.BeamSearchStack
         """
 
@@ -406,7 +406,7 @@ class BeamSearchInference:
         stack = self.shuffle_beam(model, stack, hypo_indices)
 
         # Compute penalties, if any
-        base_scores = self.compute_base_scores(stack, **flags)
+        base_scores = self.compute_base_scores(model, stack, **flags)
 
         # Get top-beam_size new hypotheses for each input.
         # Note: we assume sample returns hypo_indices from highest score to lowest, therefore hypotheses
@@ -436,7 +436,7 @@ class BeamSearchInference:
 
         raw_scores = stack.raw_scores + delta_raw_scores
         stack = stack._replace(raw_scores=raw_scores)
-        scores = self.compute_scores(stack, **flags)
+        scores = self.compute_scores(model, stack, **flags)
 
         # Compute sample id for each hypo in stack
         n_hypos = tf.shape(stack.out)[0]
@@ -508,7 +508,7 @@ class BeamSearchInference:
         """
         Compute hypothesis scores given beam search stack. Applies any penalties necessary.
         For quick prototyping, you can store whatever penalties you need in stack.dec_state
-        :type model: tfnn.task.seq2seq.inference.TranslateModel
+        :type model: models.TranslateModel
         :type stack: BeamSearchDecoder.BeamSearchStack
         :return: float32 vector (one score per hypo)
         """
@@ -518,7 +518,7 @@ class BeamSearchInference:
         """
         Compute hypothesis scores to be used as base_scores for model.sample.
         This is usually same as compute_scores but scaled to the magnitude of log-probabilities
-        :type model: tfnn.task.seq2seq.inference.TranslateModel
+        :type model: TranslateModel
         :type stack: BeamSearchDecoder.BeamSearchStack
         :return: float32 vector (one score per hypo)
         """
@@ -553,12 +553,12 @@ class BeamSearchInference:
         )
 
 
-class PenalizedBeamSearchDecoder(BeamSearchDecoder):
+class PenalizedBeamSearchInference(BeamSearchInference):
     """
     Performs ingraph beam search for given input sequences (inp)
     Implements length and coverage penalties
     """
-    def compute_scores(self, stack, len_alpha=1, coverage_beta=0, **flags):
+    def compute_scores(self, model, stack, len_alpha=1, coverage_beta=0, **flags):
         """
         Computes scores after length and coverage penalty
         :param len_alpha: coefficient for length penalty, score / ( [5 + len(output_sequence)] / 6) ^ len_alpha
@@ -582,12 +582,12 @@ class PenalizedBeamSearchDecoder(BeamSearchDecoder):
             scores += coverage_penalty
         return scores
 
-    def compute_base_scores(self, stack, len_alpha=1, **flags):
+    def compute_base_scores(self, model, stack, len_alpha=1, **flags):
         """
         Compute hypothesis scores to be used as base_scores for model.sample
         :return: float32 vector (one score per hypo)
         """
-        scores = self.compute_scores(stack, len_alpha=len_alpha, **flags)
+        scores = self.compute_scores(model, stack, len_alpha=len_alpha, **flags)
         if len_alpha:
             length_penalty = tf.pow((1. + tf.to_float(stack.out_len) / 6.), len_alpha)
             scores *= length_penalty
