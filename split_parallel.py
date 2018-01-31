@@ -1,6 +1,7 @@
 import sys
 import argparse
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 parser = argparse.ArgumentParser()
 
@@ -20,8 +21,7 @@ np.random.seed(322)
 np.random.shuffle(lines)
 lines_num = len(lines)
 
-lines_train = lines[:round(lines_num * (1 - args.fraction))]
-lines_val = lines[round(lines_num * (1 - args.fraction)):]
+lines_train, lines_val = train_test_split(lines, test_size=args.fraction)
 
 
 with open(args.out_path + '/parallel_train1.txt', 'wb') as f:
