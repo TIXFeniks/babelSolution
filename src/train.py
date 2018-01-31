@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from bleu import compute_bleu
 from models.gnmt_lstm import AttentiveTranslationModel
 from vocab import Vocab
-from src.training_utils import batch_generator_over_dataset
+from src.training_utils import batch_generator_over_dataset, compute_bleu_for_model
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
 from batch_iterator import iterate_minibatches
 
@@ -110,72 +110,51 @@ def train_gnmt(config):
             ax = fig.add_subplot(111)
             fig.show()
 
-        for i, (batch_src, batch_dst) in enumerate(tqdm(batches)):
-            batch_src_ix = inp_voc.tokenize_many(batch_src)
-            batch_dst_ix = out_voc.tokenize_many(batch_dst)
+        while True:
+            for i, (batch_src, batch_dst) in enumerate(tqdm(batches)):
+                batch_src_ix = inp_voc.tokenize_many(batch_src)
+                batch_dst_ix = out_voc.tokenize_many(batch_dst)
 
-            feed_dict = {inp: batch_src_ix, out: batch_dst_ix}
+                feed_dict = {inp: batch_src_ix, out: batch_dst_ix}
 
-            loss_t = sess.run([train_step, loss], feed_dict)[1]
-            loss_history.append(np.mean(loss_t))
+                loss_t = sess.run([train_step, loss], feed_dict)[1]
+                loss_history.append(np.mean(loss_t))
 
-            print('Iterations done: {}. Loss: {:.2f}'.format(i, loss_t))
+                print('Iterations done: {}. Loss: {:.2f}'.format(i, loss_t))
 
-            if (i+1) % config.get('save_every', 500) == 0:
-                # Saving model
-                w_values = sess.run(weights)
-                weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
-                np.savez('{}/model.iter-{}.npz'.format(model_path, i+1), **weights_dict)
+                if (i+1) % config.get('save_every', 500) == 0:
+                    # Saving model
+                    w_values = sess.run(weights)
+                    weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
+                    np.savez('{}/model.iter-{}.npz'.format(model_path, i+1), **weights_dict)
 
-                # Saving optimizer state
-                state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
-                np.savez('{}/{}.iter-{}.npz'.format(model_path, 'optimizer_state', i+1), **state_dict)
+                    # Saving optimizer state
+                    state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
+                    np.savez('{}/{}.iter-{}.npz'.format(model_path, 'optimizer_state', i+1), **state_dict)
 
-            if (i+1) % config.get('validate_every', 500) == 0:
-                # Validating the model
-                # test_bleu_history.append([i,compute_bleu(model, dev.inp_lines[::5], dev.out_lines[::5])[0]])
-                val_score = compute_val_score(model, sess, src_val, dst_val)
-                val_scores.append(val_score)
+                if (i+1) % config.get('validate_every', 500) == 0:
+                    print('Validating')
+                    val_score = compute_bleu_for_model(model, sess, model.inp_voc, model.out_voc, src_val, dst_val)
+                    val_scores.append(val_score)
+                    print('Validation BLEU: {:0.3f}'.format(val_score))
 
-                if use_early_stopping and len(val_scores) > 0 and val_scores[-1] < val_score[-2]:
-                    break
+                    if use_early_stopping and len(val_scores) > 0 and val_scores[-1] < val_score[-2]:
+                        break
 
-            if config.get('plot') and (i+1) % 10 == 0:
-                # figure(figsize=[8,8])
-                ax.clear()
-                ax.set_title('Batch loss')
-                ax.plot(loss_history)
-                ax.plot(ewma(np.array(loss_history), span=50))
-                ax.grid()
-                # fig.canvas.draw()
-                fig.show()
+                if config.get('plot') and (i+1) % 10 == 0:
+                    # figure(figsize=[8,8])
+                    ax.clear()
+                    ax.set_title('Batch loss')
+                    ax.plot(loss_history)
+                    ax.plot(ewma(np.array(loss_history), span=50))
+                    ax.grid()
+                    # fig.canvas.draw()
+                    fig.show()
 
-        epoch +=1
+            epoch +=1
 
-
-def compute_val_score(model, sess, src_val, dst_val):
-    print('Validating')
-    src_val_ix = model.inp_voc.tokenize_many(src_val)
-
-    inp = tf.placeholder(tf.int32, [None, None])
-    sy_translations = model.symbolic_translate(inp)[0]
-
-    translations = []
-
-    for batch in iterate_minibatches(src_val_ix, batchsize=7):
-        translations += sess.run([sy_translations], feed_dict={inp: batch[0]})[0].tolist()
-
-    translations = model.out_voc.detokenize_many(translations)
-    outputs = Vocab.remove_bpe_many(translations)
-    targets = Vocab.remove_bpe_many(dst_val)
-    references = [[t] for t in targets]
-
-    score = compute_bleu(references, outputs)[0]
-
-    print('Validation score: {:0.3f}'.format(score))
-
-    return score
-
+            if config.get('max_epochs') and config.get('max_epochs') == epoch:
+                break
 
 def main():
     parser = argparse.ArgumentParser(description='Run project commands')
@@ -194,6 +173,7 @@ def main():
     model_parser.add_argument('--val_split_size', type=float)
     model_parser.add_argument('--inp_embeddings_path')
     model_parser.add_argument('--out_embeddings_path')
+    model_parser.add_argument('--max_epochs', type=int)
 
     args = parser.parse_args()
 

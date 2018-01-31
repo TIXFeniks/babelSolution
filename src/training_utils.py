@@ -1,4 +1,9 @@
 from itertools import islice, chain
+
+import tensorflow as tf
+
+from vocab import Vocab
+from bleu import compute_bleu
 from batch_iterator import iterate_minibatches
 
 
@@ -27,7 +32,28 @@ def batch_generator(src_path, dst_path, batch_size=16, batches_per_epoch=None, s
 
 def batch_generator_over_dataset(src, dst, batch_size=16, batches_per_epoch=None):
     for batch in iterate_minibatches(list(zip(src, dst)), batchsize=batch_size, shuffle=True):
+        batch = batch[0] # Removing strange np.array wrapper
         batch_src = [pair[0] for pair in batch]
         batch_dst = [pair[1] for pair in batch]
 
-        yield (batch_src[0], batch_dst[0])
+        yield (batch_src, batch_dst)
+
+
+def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val):
+    src_val_ix = inp_voc.tokenize_many(src_val)
+
+    inp = tf.placeholder(tf.int32, [None, None])
+    sy_translations = model.symbolic_translate(inp)[0]
+
+    translations = []
+
+    for batch in iterate_minibatches(src_val_ix, batchsize=7):
+        translations += sess.run([sy_translations], feed_dict={inp: batch[0]})[0].tolist()
+
+    outputs = out_voc.detokenize_many(translations, unbpe=True)
+    targets = Vocab.remove_bpe_many(dst_val)
+    references = [[t] for t in targets]
+
+    bleu = compute_bleu(references, outputs)[0]
+
+    return bleu
