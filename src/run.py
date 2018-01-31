@@ -56,7 +56,7 @@ def run_model(model_name, config):
 
         translations = []
 
-        for batch in iterate_minibatches(src_data_ix, batchsize=config.get('batch_size_on_validation')):
+        for batch in iterate_minibatches(src_data_ix, batchsize=config.get('batch_size_for_inference')):
             translations += sess.run([sy_translations], feed_dict={inp: batch[0]})[0].tolist()
 
         translations = [t[1:] for t in translations] # Removing BOS
@@ -77,7 +77,7 @@ def main():
     parser.add_argument('--input_path')
     parser.add_argument('--output_path')
     parser.add_argument('--hp_file_path')
-    parser.add_argument('--batch_size_on_validation', type=int)
+    parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--gpu_memory_fraction', type=float)
 
     args = parser.parse_args()

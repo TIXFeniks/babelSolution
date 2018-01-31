@@ -128,7 +128,7 @@ def train_model(model_name, config):
 
                 if (num_iters_done+1) % config.get('validate_every', 500) == 0:
                     print('Validating')
-                    val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_type=model_name)
+                    val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config)
                     val_scores.append(val_score)
                     print('Validation BLEU: {:0.3f}'.format(val_score))
 
@@ -165,7 +165,7 @@ def train_model(model_name, config):
         # Training is done!
         # Let's check the val score of the model and if it's good — save it
         print('Computing final validation score.')
-        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name)
+        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config)
         print('Final validation BLEU is: {:0.3f}'.format(val_score))
 
         if val_score >= max(val_scores):
@@ -190,6 +190,7 @@ def main():
     parser.add_argument('--early_stopping_last_n', type=int)
     parser.add_argument('--max_epochs', type=int)
     parser.add_argument('--max_time_seconds', type=int)
+    parser.add_argument('--batch_size_for_inference', type=int)
 
     parser.add_argument('--gpu_memory_fraction', type=float)
 
