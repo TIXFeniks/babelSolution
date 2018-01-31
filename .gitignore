@@ -76,3 +76,6 @@ debian/reproducible-experiment-platform
 debian/files
 *.substvars
 *.debhelper.log
+
+# Directory with trained models
+trained_models/
