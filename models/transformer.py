@@ -7,6 +7,7 @@ from collections import namedtuple
 from . import TranslateModel
 
 
+
 class Transformer(TranslateModel):
     """ The main model, consisting of encoder, decoder and logits """
     def __init__(self, name, inp_voc, out_voc, *_args,
@@ -39,7 +40,7 @@ class Transformer(TranslateModel):
         dec_out, dec_attn_mask = self.dec(enc_out, out, enc_attn_mask, is_train=is_train)
 
         logits = self.logits(dec_out)
-        return logits
+        return logits#tf.nn.log_softmax(logits)
 
     # Translation code
 
