@@ -1,7 +1,7 @@
 #!/bin/bash
 
 DATA_PATH="/nmt/data"
-INPUT_DATA_PATH="/input"
+INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
 
 # What the hack is this?
@@ -18,7 +18,7 @@ PYTHONPATH=/nmt python3.6 /nmt/src/train.py transformer \
             --gpu_memory_fraction=1 \
             --validate_every=1000 \
             --save_every=500 \
-            --max_epochs=10 \
+            --max_epochs=100 \
             --use_early_stopping=True \
             --early_stopping_last_n=10
 

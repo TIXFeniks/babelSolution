@@ -36,9 +36,10 @@ mkdir $data
 
 threads=4
 
-echo "$joint_dict"
-echo "$home"
-echo "$tokens"
+echo "HOME: $home"
+echo "INP_DATA: $inp_data"
+echo "TOKENS: $tokens"
+echo "JOINT_DICT: $joint_dict"
 
 python3.6 $home/split_parallel.py -o $data -i $inp_data -r 0.05
 
