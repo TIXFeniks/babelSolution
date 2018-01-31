@@ -39,8 +39,11 @@ def train_model(model_name, config):
     lr = hp.get('lr', 1e-4)
 
     use_early_stopping = hp.get('use_early_stopping', False)
+    
+    gpu_options = tf.GPUOptions(allow_growth=True)
+    if config.get('gpu_memory_fraction'):
+        gpu_options.per_process_gpu_memory_fraction=config.get('gpu_memory_fraction',0.95)
 
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=config.get('gpu_memory_fraction', 1))
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         model = create_model(model_name, inp_voc, out_voc, hp)

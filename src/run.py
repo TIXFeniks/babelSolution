@@ -25,7 +25,12 @@ def run_model(model_name, config):
     out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
 
     hp = json.load(open(config.get('hp_file'), 'r', encoding='utf-8')) if config.get('hp_file') else {}
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=config.get('gpu_memory_fraction', 0.3))
+    
+    gpu_options = tf.GPUOptions(allow_growth=True)
+    if config.get('gpu_memory_fraction'):
+        gpu_options.per_process_gpu_memory_fraction=config.get('gpu_memory_fraction',0.95)
+
+    print(gpu_options)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         model = create_model(model_name, inp_voc, out_voc, hp)
@@ -63,7 +68,7 @@ def run_model(model_name, config):
 
         outputs = out_voc.detokenize_many(translations, unbpe=True)
 
-        print('Saveing the results into %s' % output_path)
+        print('Saving the results into %s' % output_path)
         with open(output_path, 'wb') as output_file:
             output_file.write('\n'.join(outputs).encode('utf-8'))
 
