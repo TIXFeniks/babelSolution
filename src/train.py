@@ -25,6 +25,7 @@ def train_gnmt(config):
     """
 
     model_path = 'trained_models/{}'.format(MODEL_NAME)
+    if not os.path.isdir('trained_models'): os.mkdir('trained_models')
     if not os.path.isdir(model_path): os.mkdir(model_path)
 
     src_path = '{}/bpe_parallel1.txt'.format(config.get('data_path'))
@@ -84,8 +85,11 @@ def train_gnmt(config):
             assigns = [tf.assign(var, tf.constant(w_values[var.name])) for var in weights]
             sess.run(assigns)
 
-        if config.get('optimizer_state_path', False):
+        if config.get('optimizer_state_path'):
             pass # TODO(universome): load optimizer state
+
+        if config.get('inp_embeddings_path'):
+            pass
 
         initialize_uninitialized_variables(sess)
 
@@ -95,7 +99,7 @@ def train_gnmt(config):
         val_scores = []
 
         # TODO(universome): this does not work, but looks like we do not need it :|
-        if config.get('plot', False):
+        if config.get('plot'):
             plt.ion()
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -110,6 +114,8 @@ def train_gnmt(config):
             loss_t = sess.run([train_step, loss], feed_dict)[1]
             loss_history.append(np.mean(loss_t))
 
+            print('Iterations done: {}. Loss: {:.2f}'.format(i, loss_t))
+
             if (i+1) % config.get('save_every', 500) == 0:
                 # Saving model
                 w_values = sess.run(weights)
@@ -120,7 +126,7 @@ def train_gnmt(config):
                 state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
                 np.savez('{}/{}.iter-{}.npz'.format(model_path, 'optimizer_state', i+1), **state_dict)
 
-            if (i+1) % config.get('validate_every', 500):
+            if (i+1) % config.get('validate_every', 500) == 0:
                 # Validating the model
                 # test_bleu_history.append([i,compute_bleu(model, dev.inp_lines[::5], dev.out_lines[::5])[0]])
                 val_score = compute_val_score(model, sess, src_val, dst_val)
@@ -129,7 +135,7 @@ def train_gnmt(config):
                 if use_early_stopping and len(val_scores) > 0 and val_scores[-1] < val_score[-2]:
                     break
 
-            if config.get('plot', False) and (i+1) % 10 == 0:
+            if config.get('plot') and (i+1) % 10 == 0:
                 # figure(figsize=[8,8])
                 ax.clear()
                 ax.set_title('Batch loss')
@@ -143,6 +149,7 @@ def train_gnmt(config):
 
 
 def compute_val_score(model, sess, src_val, dst_val):
+    print('Validating')
     src_val_ix = model.inp_voc.tokenize_many(src_val)
 
     inp = tf.placeholder(tf.int32, [None, None])
@@ -159,6 +166,8 @@ def compute_val_score(model, sess, src_val, dst_val):
     references = [[t] for t in targets]
 
     score = compute_bleu(references, outputs)[0]
+
+    print('Validation score: {:0.3f}'.format(score))
 
     return score
 
@@ -178,6 +187,7 @@ def main():
     model_parser.add_argument('--validate_every', type=int)
     model_parser.add_argument('--save_every', type=int)
     model_parser.add_argument('--val_split_size', type=float)
+    model_parser.add_argument('--embeddings_path')
 
     args = parser.parse_args()
 
