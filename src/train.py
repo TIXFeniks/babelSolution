@@ -87,6 +87,7 @@ def train_gnmt(config):
         if config.get('optimizer_state_path'):
             pass # TODO(universome): load optimizer state
 
+        # TODO(universome): embeddings will be in a different format
         if config.get('inp_embeddings_path'):
             embeddings = np.load(config.get('inp_embeddings_path'))['arr_0'].astype(np.float32)
             sess.run(tf.assign(model.emb_inp.trainable_weights[0], tf.constant(embeddings)))
@@ -98,7 +99,6 @@ def train_gnmt(config):
         initialize_uninitialized_variables(sess)
 
         batch_size = config.get('batch_size', 16)
-        batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
         epoch = 0
         loss_history = []
         val_scores = []
@@ -125,6 +125,8 @@ def train_gnmt(config):
         should_stop = False # We need this var to break outer loop
 
         while not should_stop:
+            batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
+
             for i, (batch_src, batch_dst) in enumerate(batches):
                 batch_src_ix = inp_voc.tokenize_many(batch_src)
                 batch_dst_ix = out_voc.tokenize_many(batch_dst)
@@ -193,7 +195,6 @@ def main():
     model_parser.add_argument('--optimizer_state_path')
     model_parser.add_argument('--validate_every', type=int)
     model_parser.add_argument('--save_every', type=int)
-    model_parser.add_argument('--val_split_size', type=float)
     model_parser.add_argument('--inp_embeddings_path')
     model_parser.add_argument('--out_embeddings_path')
     model_parser.add_argument('--max_num_iters', type=int)
