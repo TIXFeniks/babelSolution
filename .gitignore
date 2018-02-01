@@ -78,6 +78,5 @@ debian/files
 # Directory with trained models
 trained_models/
 
-
 # ext deps
-ext_libs
+ext_libs/
