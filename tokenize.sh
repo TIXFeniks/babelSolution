@@ -61,7 +61,7 @@ do
 		echo "Tokenizing ${corp}${lang} ..."
 		cat $data/$corp$lang.txt | \
 		$mosesdecoder/scripts/tokenizer/normalize-punctuation.perl | \
-		$mosesdecoder/scripts/tokenizer/tokenizer.perl -threads $threads -penn > \
+		$mosesdecoder/scripts/tokenizer/tokenizer.perl -threads $threads > \
 		$data/tok_$corp$lang.txt
 	done
 	(cat $data/tok_parallel_val$lang.txt; cat $data/tok_parallel_train$lang.txt; cat $data/tok_corpus$lang.txt) > $data/tok_all_$lang.txt
@@ -100,7 +100,7 @@ done
 
 cat $data/input.txt | \
 $mosesdecoder/scripts/tokenizer/normalize-punctuation.perl | \
-$mosesdecoder/scripts/tokenizer/tokenizer.perl -threads=$threads -penn > \
+$mosesdecoder/scripts/tokenizer/tokenizer.perl -threads=$threads > \
 $data/tok_input.txt
 
 cat $data/tok_input.txt | \
