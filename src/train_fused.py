@@ -213,7 +213,7 @@ def train_model(model_name, config):
                                            model_name, config, max_len=max_len)
         print('Final validation BLEU is: {:0.3f}'.format(val_score))
 
-        if val_score >= max(val_scores):
+        if len(val_scores) == 0 or val_score >= max(val_scores):
             save_model()
             save_optimizer_state(num_iters_done+1)
 
