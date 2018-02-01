@@ -70,8 +70,8 @@ with open(args.inp_path + '/input.txt', encoding='utf-8') as f:
     lines_inp = [x[:-1] for x in f.readlines()]
 
 with open(args.out_path + '/tok_corpus1.txt', 'wb') as f:
-    f.write(tok_split_several_lines(lines1))
+    f.write(tok_several_lines(lines1))
 with open(args.out_path + '/tok_corpus2.txt', 'wb') as f:
-    f.write(tok_split_several_lines(lines2))
+    f.write(tok_several_lines(lines2))
 with open(args.out_path + '/tok_input.txt', 'wb') as f:
-    f.write(tok_split_several_lines(lines_inp))
+    f.write(tok_several_lines(lines_inp))
