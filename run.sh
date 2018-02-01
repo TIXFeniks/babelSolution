@@ -16,7 +16,7 @@ HP_FILE_PATH="$PROJECT_DIR/hp_files/stable_transformer.json"
 BATCH_SIZE_FOR_INFERENCE=64
 MAX_TIME_SECONDS=1800
 VALIDATE_EVERY=5000
-MAX_EPOCHS=50000
+MAX_EPOCHS=1000
 USE_EARLY_STOPPING=True
 EARLY_STOPPING_LAST_N=5
 
@@ -35,7 +35,6 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train.py" "$MODEL_NAME" \
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
             --use_early_stopping="$USE_EARLY_STOPPING" \
             --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
-            --gpu_memory_fraction=0.5 \
             --max_epochs="$MAX_EPOCHS"
 
 # Running the model
@@ -45,5 +44,4 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run.py" "$MODEL_NAME" \
             --input_path="$DATA_PATH/bpe_input.txt" \
             --output_path="$OUTPUT_DATA_PATH/output.txt" \
             --hp_file_path="$HP_FILE_PATH" \
-            --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
-            --gpu_memory_fraction=0.5
+            --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE"
