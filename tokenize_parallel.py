@@ -19,7 +19,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-path = "/ntk"
+path = "/nmt/ntk"
 nltk.download('punkt', path)
 nltk.data.path.append(path)
 
