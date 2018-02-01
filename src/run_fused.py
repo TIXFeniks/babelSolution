@@ -93,10 +93,6 @@ def run_model(model_name, config):
             trans_ix = sess.run([sy_translations], feed_dict={inp: batch_data_ix})[0]
             # deprocess = True gets rid of BOS and EOS
             trans = out_voc.detokenize_many(trans_ix, unbpe=True, deprocess=True)
-            for _src, _dst in zip(batch[0], trans):
-                print(_src)
-                print(_dst)
-                print()
             translations.extend(trans)
 
         print('Saving the results into %s' % output_path)
