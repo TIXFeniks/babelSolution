@@ -78,7 +78,6 @@ def run_model(model_name, config):
         initialize_uninitialized_variables(sess)
 
         print('Generating translations')
-        src_data_ix = inp_voc.tokenize_many(src_data)
         inp = tf.placeholder(tf.int32, [None, None])
 
         assert model_name != 'gnmt', 'gnmt no longer supported'
