@@ -19,7 +19,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-path = "/nmt/ntk"
+path = "/nmt/nltk"
 nltk.download('punkt', path)
 nltk.data.path.append(path)
 
@@ -29,11 +29,6 @@ with open(args.inp_path + '/parallel_corpus.txt', encoding = 'utf-8') as f:
 
 
 lines_train, lines_val = train_test_split(lines, test_size=args.fraction, shuffle=True, random_state=42)
-
-# lines = [' '.join(nltk.word_tokenize(x)) for x in lines]
-# lines_val = [' '.join(nltk.word_tokenize(x)) for x in lines_val]
-# lines_train = [' '.join(nltk.word_tokenize(x)) for x in lines_train]
-
 
 def tok_line(line):
     return ' '.join(nltk.word_tokenize(line))
@@ -58,3 +53,22 @@ with open(args.out_path + '/tok_parallel1.txt', 'wb') as f:
     f.write(tok_split_several_lines(lines, 0))
 with open(args.out_path + '/tok_parallel2.txt', 'wb') as f:
     f.write(tok_split_several_lines(lines, 1))
+
+with open(args.inp_path + '/parallel_corpus.txt', encoding = 'utf-8') as f:
+    lines = [x[:-1] for x in f.readlines()]
+
+
+###
+with open(args.inp_path + '/corpus1.txt', encoding = 'utf-8') as f:
+    lines1 = [x[:-1] for x in f.readlines()]
+with open(args.inp_path + '/corpus2.txt', encoding = 'utf-8') as f:
+    lines2 = [x[:-1] for x in f.readlines()]
+with open(args.inp_path + '/input.txt', encoding='utf-8') as f:
+    lines2 = [x[:-1] for x in f.readlines()]
+
+with open(args.out_path + '/tok_corpus1.txt', 'wb') as f:
+    f.write(tok_split_several_lines(lines1, 0))
+with open(args.out_path + '/tok_corpus2.txt', 'wb') as f:
+    f.write(tok_split_several_lines(lines2, 1))
+with open(args.out_path + '/tok_input.txt', 'wb') as f:
+    f.write(tok_split_several_lines(lines2, 1))
