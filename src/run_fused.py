@@ -33,20 +33,7 @@ def run_model(model_name, config):
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
-        lm = TransformerLM('lm', out_voc, **{
-                "hid_size": 256,
-                "ff_size": 1024,
-                "num_heads": 4,
-                "num_layers": 4,
-                "rescale_emb": True,
-                "relu_dropout": 0.0,
-                "res_dropout": 0.0,
-                "attn_dropout": 0.0,
-                "inp_emb_bias": True,
-                "res_steps": "nlda",
-                "normalize_out": True,
-                "force_bos": True
-        })
+        lm = TransformerLM('lm2', out_voc, **hp)
         if config.get('target-lm-path'):
             lm_weights = np.load(config.get('target-lm-path'))
             ops = []

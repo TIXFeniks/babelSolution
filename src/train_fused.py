@@ -44,20 +44,7 @@ def train_model(model_name, config):
     gpu_options = create_gpu_options(config)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-        lm = TransformerLM('lm', out_voc, **{
-                "hid_size": 256,
-                "ff_size": 1024,
-                "num_heads": 4,
-                "num_layers": 4,
-                "rescale_emb": True,
-                "relu_dropout": 0.0,
-                "res_dropout": 0.0,
-                "attn_dropout": 0.0,
-                "inp_emb_bias": True,
-                "res_steps": "nlda",
-                "normalize_out": True,
-                "force_bos": True
-        })
+        lm = TransformerLM('lm2', out_voc, **hp)
         if config.get('target-lm-path'):
             lm_weights = np.load(config.get('target-lm-path'))
             ops = []
@@ -122,8 +109,7 @@ def train_model(model_name, config):
             with np.load(config.get('target-lm-path')) as dic:
                 for key in dic: # decoder_init
                     w_lm = dic[key]
-                    weights_key = key.replace(
-                        'lm/','').replace('main/','').replace("enc",'dec').replace("inp","out")
+                    weights_key = '/'.join(key.split('/')[1:]).replace('main/','').replace("enc",'dec').replace("inp","out")
                     w_var = weights_by_common_name[weights_key]
 
                     all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
@@ -133,7 +119,7 @@ def train_model(model_name, config):
             with np.load(config.get("src-lm-path")) as dic:
                 for key in dic: # encoder_init
                     w_lm = dic[key]
-                    weights_key = key.replace('lm/','').replace('main/','')
+                    weights_key = '/'.join(key.split('/')[1:]).replace('main/','')
                     if "logits" in weights_key: # encoder has no 'logits' layer for the logits to be initialised
                         continue
                     w_var = weights_by_common_name[weights_key]

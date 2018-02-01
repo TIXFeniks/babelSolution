@@ -11,11 +11,11 @@ DATA_PATH="data"
 INPUT_DATA_PATH="data"
 OUTPUT_DATA_PATH="data"
 
-MODEL_NAME="lm"
-HP_FILE_PATH="$PROJECT_DIR/hp_files/lm_fitted.json"
-MAX_TIME_SECONDS=20
-MAX_EPOCHS=5
 LANG=$1
+MODEL_NAME="lm$LANG"
+HP_FILE_PATH="$PROJECT_DIR/hp_files/lm_fitted.json"
+MAX_TIME_SECONDS=3600
+MAX_EPOCHS=3
 
 # What the hack is this?
 cd "$PROJECT_DIR"
