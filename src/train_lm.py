@@ -28,17 +28,11 @@ def train_model(model_name, config):
     lang = config.get('lang', 2)
 
     src_train_path = '{}/bpe_corpus{}.txt'.format(config.get('data_path'), lang)
-    #src_val_path = '{}/bpe_parallel_val1.txt'.format(config.get('data_path'))
-    # dst_train_path = '{}/bpe_parallel_train2.txt'.format(config.get('data_path'))
-    #dst_val_path = '{}/bpe_parallel_val2.txt'.format(config.get('data_path'))
 
     src_train = open(src_train_path, 'r', encoding='utf-8').read().splitlines()
-    #dst_train = open(dst_train_path, 'r', encoding='utf-8').read().splitlines()
-    #src_val = open(src_val_path, 'r', encoding='utf-8').read().splitlines()
-    #dst_val = open(dst_val_path, 'r', encoding='utf-8').read().splitlines()
 
     voc = Vocab.from_file('{}/{}.voc'.format(config.get('data_path'), lang))
-    #out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
+
     max_len = config.get('max_len', 200)
 
     # Hyperparameters
@@ -46,56 +40,18 @@ def train_model(model_name, config):
     gpu_options = create_gpu_options(config)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-        # lm = TransformerLM('lm', voc, **{
-        #         "hid_size": 256,
-        #         "ff_size": 1024,
-        #         "num_heads": 4,
-        #         "num_layers": 4,
-        #         "rescale_emb": True,
-        #         "relu_dropout": 0.0,
-        #         "res_dropout": 0.0,
-        #         "attn_dropout": 0.0,
-        #         "inp_emb_bias": True,
-        #         "res_steps": "nlda",
-        #         "normalize_out": True,
-        #         "force_bos": True
-        # })
-
-        lm = TransformerLM('lm', voc, hp)
-
-        # if config.get('target-lm-path'):
-        #     lm_weights = np.load(config.get('target-lm-path'))
-        #     ops = []
-        #     for w in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, lm.name):
-        #         if w.name in lm_weights:
-        #             ops.append(tf.assign(w, lm_weights[w.name]))
-        #         else:
-        #             print(w.name, 'not initialized')
-        #
-        #     sess.run(ops);
-        #
-        # model = Model(model_name, inp_voc, out_voc, lm, **hp)
-
+        lm = TransformerLM('lm', voc, **hp)
 
         inp = tf.placeholder(tf.int32, [None, None])
-        #out = tf.placeholder(tf.int32, [None, None])
-        #logprobs = model.symbolic_score(inp, out, is_train=True)[:,:tf.shape(out)[1]]
 
         logits = lm(inp, is_train=True)
         nll = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=inp)
 
         loss = nll * infer_mask(inp, voc.eos, dtype=tf.float32)
-
         loss = tf.reduce_sum(loss, axis=1)
         loss = tf.reduce_mean(loss)
 
-        # nll = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logprobs, labels=out)
-        # loss = nll * infer_mask(out, out_voc.eos, dtype=tf.float32)
-        # loss = tf.reduce_sum(loss, axis=1)
-        # loss = tf.reduce_mean(loss)
-
         weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, lm.name)
-
         all_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
         non_trainable_vars = list(set(all_vars).difference(set(weights)))
 
@@ -129,32 +85,6 @@ def train_model(model_name, config):
             sess.run(tf.assign(lm.emb_out.trainable_weights[0], tf.constant(embeddings)))
 
         initialize_uninitialized_variables(sess)
-
-        # assigns = []
-        # weights_by_common_name = {w.name[len(model_name)+1:]: w for w in weights}
-        # if config.get('target-lm-path'):
-        #     with np.load(config.get('target-lm-path')) as dic:
-        #         for key in dic: # decoder_init
-        #             w_lm = dic[key]
-        #             weights_key = key.replace(
-        #                 'lm/','').replace('main/','').replace("enc",'dec').replace("inp","out")
-        #             w_var = weights_by_common_name[weights_key]
-        #
-        #             all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
-        #
-        #             assigns.append(tf.assign(w_var,w_lm))
-        # if config.get('src-lm-path'):
-        #     with np.load(config.get("src-lm-path")) as dic:
-        #         for key in dic: # encoder_init
-        #             w_lm = dic[key]
-        #             weights_key = key.replace('lm/','').replace('main/','')
-        #             if "logits" in weights_key: # encoder has no 'logits' layer for the logits to be initialised
-        #                 continue
-        #             w_var = weights_by_common_name[weights_key]
-        #
-        #             all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
-        #             assigns.append(tf.assign(w_var,w_lm))
-        # sess.run(assigns)
 
         batch_size = hp.get('batch_size', 16)
         epoch = 0
@@ -214,6 +144,11 @@ def train_model(model_name, config):
                     #         should_start_next_epoch = False
                     #         break
 
+                    #if np.argmax(val_scores) == len(val_scores) - 1:
+                    print('Saving model')
+                    save_model()
+                    save_optimizer_state(num_iters_done+1)
+
                     num_iters_done += 1
 
                     if config.get('max_time_seconds'):
@@ -258,17 +193,13 @@ def main():
     parser.add_argument('--src-lm-path')
     parser.add_argument('--pretrained_model_path')
     parser.add_argument('--hp_file_path')
-    parser.add_argument('--validate_every', type=int)
     parser.add_argument('--use_early_stopping', type=bool)
-    parser.add_argument('--early_stopping_last_n', type=int)
     parser.add_argument('--max_epochs', type=int)
     parser.add_argument('--max_time_seconds', type=int)
-    parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--max_len', type=int)
 
     parser.add_argument('--gpu_memory_fraction', type=float)
     parser.add_argument('--lang', type=int)
-
 
     args = parser.parse_args()
 
