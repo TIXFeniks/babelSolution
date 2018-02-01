@@ -48,26 +48,24 @@ def run_model(model_name, config):
         src_data_ix = inp_voc.tokenize_many(src_data)
         inp = tf.placeholder(tf.int32, [None, None])
 
-        if model_name == 'gnmt':
-            sy_translations = model.symbolic_translate(inp, greedy=True)[0]
-        elif model_name == 'transformer':
-            sy_translations = model.symbolic_translate(inp, beam_size=6, len_alpha=0.6,
-                                                       back_prop=False, swap_memory=True).best_out
-        else:
-            raise ValueError('Model "{}" is unkown'.format(model))
+        print('Generating translations')
+        inp = tf.placeholder(tf.int32, [None, None])
+
+        assert model_name != 'gnmt', 'gnmt no longer supported'
+        sy_translations = model.symbolic_translate(inp, back_prop=False, swap_memory=True).best_out
 
         translations = []
 
-        for batch in iterate_minibatches(src_data_ix, batchsize=config.get('batch_size_for_inference')):
-            translations += sess.run([sy_translations], feed_dict={inp: batch[0][:, :max_len]})[0].tolist()
-
-        # deprocess = True gets rid of BOS and EOS
-        outputs = out_voc.detokenize_many(translations, unbpe=True, deprocess=True)
+        for batch in tqdm(iterate_minibatches(src_data, batchsize=config.get('batch_size_for_inference'))):
+            batch_data_ix = inp_voc.tokenize_many(batch[0])[:, :max_len]
+            trans_ix = sess.run([sy_translations], feed_dict={inp: batch_data_ix})[0]
+            # deprocess = True gets rid of BOS and EOS
+            trans = out_voc.detokenize_many(trans_ix, unbpe=True, deprocess=True)
+            translations.extend(trans)
 
         print('Saving the results into %s' % output_path)
         with open(output_path, 'wb') as output_file:
-            output_file.write('\n'.join(outputs).encode('utf-8'))
-
+            output_file.write('\n'.join(translations).encode('utf-8'))
 
 def main():
     parser = argparse.ArgumentParser(description='Run project commands')
