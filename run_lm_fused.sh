@@ -49,7 +49,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
 MODEL_NAME="transformer"
 HP_FILE_PATH="$PROJECT_DIR/hp_files/lm_fitted.json"
 BATCH_SIZE_FOR_INFERENCE=32
-MAX_TIME_SECONDS=300
+MAX_TIME_SECONDS=1800
 VALIDATE_EVERY=1000
 MAX_EPOCHS=50000
 USE_EARLY_STOPPING=True
@@ -65,8 +65,8 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NA
             --use_early_stopping="$USE_EARLY_STOPPING" \
             --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
             --max_epochs="$MAX_EPOCHS" \
-            --target_lm_path="trained_models/lm2/model.npz" \
-            --src_lm_path="trained_models/lm1/model.npz"
+            --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
+            --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz"
 
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME" \
@@ -76,4 +76,4 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --output_path="$OUTPUT_DATA_PATH/output.txt" \
             --hp_file_path="$HP_FILE_PATH" \
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
-            --target_lm_path="trained_models/lm2/model.npz"
+            --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz"
