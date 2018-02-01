@@ -33,7 +33,7 @@ RUN pip install tqdm pandas matplotlib fasttext keras sklearn
 
 RUN pip install tensorflow-gpu==1.4.0 && \
     pip install Cython && \
-    pip install tqdm pandas matplotlib fasttext keras sklearn
+    pip install tqdm pandas matplotlib fasttext keras sklearn nltk
 
 RUN mkdir /nmt && mkdir /nmt/ext_libs
 WORKDIR /nmt

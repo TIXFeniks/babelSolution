@@ -47,26 +47,28 @@ echo "INP_DATA: $inp_data"
 echo "TOKENS: $tokens"
 echo "JOINT_DICT: $joint_dict"
 
-python3.6 $home/split_parallel.py -o $data -i $inp_data -r 0.05
+#python3.6 $home/split_parallel.py -o $data -i $inp_data -r 0.05
 
-cp $inp_data/corpus1.txt $data/
-cp $inp_data/corpus2.txt $data/
-cp $inp_data/input.txt $data/
+#cp $inp_data/corpus1.txt $data/
+#cp $inp_data/corpus2.txt $data/
+cp $inp_data/* $data/
 
+#python3.6 $home/split_parallel.py -o $data -i $inp_data -r 0.05
 
-for lang in 1 2
-do
-	for corp in parallel_train parallel_val corpus
-	do
-		echo "Tokenizing ${corp}${lang} ..."
-		cat $data/$corp$lang.txt | \
-		$mosesdecoder/scripts/tokenizer/normalize-punctuation.perl | \
-		$mosesdecoder/scripts/tokenizer/tokenizer.perl -threads $threads -penn > \
-		$data/tok_$corp$lang.txt
-	done
-	(cat $data/tok_parallel_val$lang.txt; cat $data/tok_parallel_train$lang.txt; cat $data/tok_corpus$lang.txt) > $data/tok_all_$lang.txt
-done
+#for lang in 1 2
+#do
+#	for corp in parallel_train parallel_val corpus
+#	do
+#		echo "Tokenizing ${corp}${lang} ..."
+#		cat $data/$corp$lang.txt | \
+#		$mosesdecoder/scripts/tokenizer/normalize-punctuation.perl | \
+#		$mosesdecoder/scripts/tokenizer/tokenizer.perl -threads $threads -penn > \
+#		$data/tok_$corp$lang.txt
+#	done
+#	(cat $data/tok_parallel_val$lang.txt; cat $data/tok_parallel_train$lang.txt; cat $data/tok_corpus$lang.txt) > $data/tok_all_$lang.txt
+#done
 
+python3.6 $home/tokenize_parallel.py -i $inp_data -o $inp_data -r 0.05
 
 
 if [ $joint_dict = true ]; then
