@@ -1,4 +1,4 @@
 {
     "image": "universome/default_exp",
-    "entry_point": "/nmt/run.sh"
+    "entry_point": "/nmt/run_lm_fused.sh"
 }
