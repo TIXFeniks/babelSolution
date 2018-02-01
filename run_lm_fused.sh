@@ -88,4 +88,4 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --output_path="$OUTPUT_DATA_PATH/output.txt" \
             --hp_file_path="$HP_FILE_PATH" \
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
-            --target_lm_path="trained_models/lm2/model.npz"
+            --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz"

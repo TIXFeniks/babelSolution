@@ -58,7 +58,8 @@ def train_model(model_name, config):
                     print(w.name, 'not initialized')
 
             sess.run(ops);
-
+        else:
+            raise ValueError("Must specify LM path!")
         model = Model(model_name, inp_voc, out_voc, lm, **hp)
 
         inp = tf.placeholder(tf.int32, [None, None])
@@ -122,6 +123,8 @@ def train_model(model_name, config):
                     all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
 
                     assigns.append(tf.assign(w_var,w_lm))
+        else:
+            raise ValueError("Must specify LM path!")
         if config.get('src_lm_path'):
             with np.load(config.get("src_lm_path")) as dic:
                 for key in dic: # encoder_init
@@ -134,6 +137,8 @@ def train_model(model_name, config):
 
                     all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
                     assigns.append(tf.assign(w_var,w_lm))
+        else:
+            raise ValueError("Must specify LM path!")
         sess.run(assigns)
 
         batch_size = hp.get('batch_size', 32)
