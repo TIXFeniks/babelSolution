@@ -12,5 +12,5 @@
         "res_steps": "nlda",
         "normalize_out": true,
         "force_bos": true,
-        "batch_size": 64
+        "batch_size": 32
 }
