@@ -2,7 +2,6 @@
 
 HP_FILE_PATH="$PROJECT_DIR/hp_files/transformer_midi.json"
 
-
 DATA_PATH="/nmt/data"
 INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
