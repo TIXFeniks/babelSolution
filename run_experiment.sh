@@ -27,7 +27,7 @@ METADATA="{\"image\": \"universome/$EXPERIMENT_NAME\", \"entry_point\": \"/nmt/r
 echo $METADATA
 
 cd ..
-rm -r "$EXPERIMENT_NAME"
+rm -rf "$EXPERIMENT_NAME"
 
 # In case of there are too many docker containers
 # sudo docker stop $(sudo docker ps -a -q) && sudo docker rm $(sudo docker ps -a -q)
