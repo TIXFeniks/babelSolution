@@ -12,13 +12,14 @@ PROJECT_DIR="/nmt"
 # OUTPUT_DATA_PATH="data"
 
 MODEL_NAME="transformer"
-HP_FILE_PATH="$PROJECT_DIR/hp_files/stable_transformer_greedy.json"
-BATCH_SIZE_FOR_INFERENCE=64
-MAX_TIME_SECONDS=600
-VALIDATE_EVERY=5000
+HP_FILE_PATH="$PROJECT_DIR/hp_files/lm_fitted.json"
+BATCH_SIZE_FOR_INFERENCE=32
+SHOULD_VALIDATE_EVERY_EPOCH=True
+MAX_TIME_SECONDS=3600
 MAX_EPOCHS=1000
 USE_EARLY_STOPPING=True
-EARLY_STOPPING_LAST_N=5
+EARLY_STOPPING_LAST_N=500
+WARM_UP_NUM_EPOCHS=5
 
 # What the hack is this?
 cd "$PROJECT_DIR"
@@ -30,12 +31,13 @@ $PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train.py" "$MODEL_NAME" \
             --data_path="$DATA_PATH" \
             --hp_file_path="$HP_FILE_PATH" \
-            --validate_every="$VALIDATE_EVERY" \
             --max_time_seconds="$MAX_TIME_SECONDS" \
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
             --use_early_stopping="$USE_EARLY_STOPPING" \
             --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
-            --max_epochs="$MAX_EPOCHS"
+            --max_epochs="$MAX_EPOCHS" \
+            --validate_every_epoch="$SHOULD_VALIDATE_EVERY_EPOCH" \
+            --warm_up_num_epochs="$WARM_UP_NUM_EPOCHS"
 
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run.py" "$MODEL_NAME" \

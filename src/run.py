@@ -82,6 +82,7 @@ def main():
     config = dict(filter(lambda x: x[1], config.items()))  # Getting rid of None vals
 
     print('Running %s model!' % args.model)
+    print('Provided config settings:', config)
     run_model(args.model, config)
 
 
