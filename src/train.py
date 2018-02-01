@@ -203,7 +203,7 @@ def train_model(model_name, config):
 
                 epoch +=1
 
-                if config.get('validate_every_epoch'):
+                if config.get('validate_every_epoch') and should_start_next_epoch:
                     should_start_next_epoch = validate()
 
                 if config.get('max_epochs') and config.get('max_epochs') == epoch:
