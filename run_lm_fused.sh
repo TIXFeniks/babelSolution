@@ -87,9 +87,9 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --data_path="$DATA_PATH" \
             --model_path="$PROJECT_DIR/trained_models/$MODEL_NAME/model.npz" \
             --input_path="$DATA_PATH/bpe_input.txt" \
-            --output_path="$DATA_PATH/output.txt" \
+            --output_path="$DATA_PATH/output.tok.txt" \
             --hp_file_path="$HP_FILE_PATH" \
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz"
 
-cat $DATA_PATH/output.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
+cat $DATA_PATH/output.tok.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
