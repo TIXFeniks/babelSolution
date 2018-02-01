@@ -14,6 +14,7 @@ sudo nvidia-docker build -t "universome/$EXPERIMENT_NAME" .
 # 2. OPTIONAL: Testing locally on small data
 # 2.1. Creating output dir
 OUTPUT_DIR="/home/user32878/data/outputs/output_$EXPERIMENT_NAME"
+rm -rf "$OUTPUT_DIR" # Cleaning directory
 mkdir "$OUTPUT_DIR"
 
 # 2.2 Running experiment locally on small data
