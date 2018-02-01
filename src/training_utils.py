@@ -63,7 +63,7 @@ def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, mode
     outputs = [out.split() for out in outputs]
 
     targets = out_voc.remove_bpe(dst_val)
-    targets = [[t] for t in targets]
+    targets = [[t.split()] for t in targets]
 
     bleu = compute_bleu(targets, outputs)[0]
 
