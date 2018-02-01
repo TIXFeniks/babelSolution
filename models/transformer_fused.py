@@ -26,10 +26,10 @@ class Model(TranslateModel):
         self.hp = hp
         self.debug = hp.get('debug', None)
         self.lm = lm
-        self.gate_hid_size = self.transformer.hid_size
 
         # Parameters
         self.transformer = Transformer(name, inp_voc, out_voc, **hp)
+        self.gate_hid_size = self.transformer.hid_size
 
         projection_matrix = None
         if hp.get('dwwt', False):
