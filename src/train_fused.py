@@ -14,7 +14,7 @@ from vocab import Vocab
 from src.training_utils import *
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, all_shapes_equal
 
-from models.transformer_fused import Model
+from models.transformer_other import Model
 from models.transformer_lm import TransformerLM
 
 
@@ -47,19 +47,7 @@ def train_model(model_name, config):
     if len(src_train) < 1000: config['max_epochs'] = 1
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-        lm = TransformerLM('lm2', out_voc, **hp)
-        if config.get('target_lm_path'):
-            lm_weights = np.load(config.get('target_lm_path'))
-            ops = []
-            for w in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, lm.name):
-                if w.name in lm_weights:
-                    ops.append(tf.assign(w, lm_weights[w.name]))
-                else:
-                    print(w.name, 'not initialized')
 
-            sess.run(ops);
-        else:
-            raise ValueError("Must specify LM path!")
         model = Model(model_name, inp_voc, out_voc, lm, **hp)
 
         inp = tf.placeholder(tf.int32, [None, None])

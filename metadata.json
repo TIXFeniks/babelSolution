@@ -1,4 +1,4 @@
 {
-    "image": "universome/fused_no_init",
+    "image": "universome/fused_no_decoder_init",
     "entry_point": "/nmt/run_lm_fused.sh"
 }
