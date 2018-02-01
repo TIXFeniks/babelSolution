@@ -17,11 +17,7 @@ args = parser.parse_args()
 with open(args.inp_path + '/parallel_corpus.txt', encoding = 'utf-8') as f:
     lines = [x[:-1] for x in f.readlines()]
 
-np.random.seed(322)
-np.random.shuffle(lines)
-lines_num = len(lines)
-
-lines_train, lines_val = train_test_split(lines, test_size=args.fraction)
+lines_train, lines_val = train_test_split(lines, test_size=args.fraction, shuffle=True, random_state=42)
 
 
 with open(args.out_path + '/parallel_train1.txt', 'wb') as f:

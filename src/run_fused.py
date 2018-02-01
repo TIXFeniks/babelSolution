@@ -45,7 +45,6 @@ def run_model(model_name, config):
             sess.run(ops);
         else:
             raise ValueError("Must specify LM path!")
-
         model = Model(model_name, inp_voc, out_voc, lm, **hp)
 
         weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, model_name)
