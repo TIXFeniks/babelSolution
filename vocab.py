@@ -117,7 +117,7 @@ class Vocab:
         return tokens if sep is None else sep.join(tokens)
 
     @classmethod
-    def remove_bpe_many(cls, sentences, sep=' '):
+    def deprocess_many(cls, sentences, sep=' '):
         return [cls.deprocess(s, sep) for s in sentences]
 
     @classmethod

@@ -104,8 +104,8 @@ def train_model(model_name, config):
                     all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
 
                     assigns.append(tf.assign(w_var,w_lm))
-        if config.get('src-lm-path'):
-            with np.load(config.get("src-lm-path")) as dic:
+        if config.get('src_lm_path'):
+            with np.load(config.get("src_lm_path")) as dic:
                 for key in dic: # encoder_init
                     w_lm = dic[key]
                     weights_key = key.replace('lm/','').replace('main/','')
@@ -203,7 +203,7 @@ def train_model(model_name, config):
 
                 epoch +=1
 
-                if config.get('validate_every_epoch'):
+                if config.get('validate_every_epoch') and should_start_next_epoch:
                     should_start_next_epoch = validate()
 
                 if config.get('max_epochs') and config.get('max_epochs') == epoch:
@@ -235,7 +235,7 @@ def main():
     parser.add_argument('--inp_embeddings_path')
     parser.add_argument('--out_embeddings_path')
     parser.add_argument('--target_lm_path')
-    parser.add_argument('--src-lm-path')
+    parser.add_argument('--src_lm_path')
     parser.add_argument('--pretrained_model_path')
     parser.add_argument('--hp_file_path')
     parser.add_argument('--validate_every', type=int)

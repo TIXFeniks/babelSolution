@@ -37,7 +37,7 @@ cd "$PROJECT_DIR"
 #            --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
 #            --max_epochs="$MAX_EPOCHS" \
 #            --target_lm_path="trained_models/pretrained_lm_lang2-24999" \
-#            --src-lm-path="trained_models/pretrained_lm_lang1-13499"
+#            --src_lm_path="trained_models/pretrained_lm_lang1-13499"
 
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run.py" "$MODEL_NAME" \
