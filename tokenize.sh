@@ -104,5 +104,5 @@ $mosesdecoder/scripts/tokenizer/tokenizer.perl -threads=$threads -penn > \
 $data/tok_input.txt
 
 cat $data/tok_input.txt | \
-$subword_nmt/apply_bpe.py -c $data/$lang.bpe --vocabulary $data/$lang.voc \
+$subword_nmt/apply_bpe.py -c $data/1.bpe --vocabulary $data/1.voc \
 --vocabulary-threshold 0 -o $data/bpe_input.txt
