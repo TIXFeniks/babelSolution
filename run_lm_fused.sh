@@ -6,10 +6,10 @@ OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="/nmt"
 
 # Let's keep here pathes for local testing and comment them out
- PROJECT_DIR="."
- DATA_PATH="data"
- INPUT_DATA_PATH="data"
- OUTPUT_DATA_PATH="data"
+# PROJECT_DIR="."
+# DATA_PATH="data"
+# INPUT_DATA_PATH="data"
+# OUTPUT_DATA_PATH="data"
 
 mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 
@@ -17,7 +17,7 @@ mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 cd "$PROJECT_DIR"
 
 # Preparing data
-# $PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
+$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
 
 ###
 # Running first LM model (for source lang)
