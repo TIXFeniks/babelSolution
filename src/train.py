@@ -90,8 +90,8 @@ def train_model(model_name, config):
 
         assigns = []
         weights_by_common_name = {w.name[len(model_name)+1:]: w for w in weights}
-        if config.get('target-lm-path'):
-            with np.load(config.get('target-lm-path')) as dic:
+        if config.get('target_lm_path'):
+            with np.load(config.get('target_lm_path')) as dic:
                 for key in dic: # decoder_init
                     w_lm = dic[key]
                     weights_key = key.replace(
@@ -198,7 +198,7 @@ def train_model(model_name, config):
                                            model_name, config, max_len=max_len)
         print('Final validation BLEU is: {:0.3f}'.format(val_score))
 
-        if val_score >= max(val_scores):
+        if len(val_scores) == 0 or val_score >= max(val_scores):
             save_model()
             save_optimizer_state(num_iters_done+1)
 
@@ -212,7 +212,7 @@ def main():
     parser.add_argument('--optimizer_state_path')
     parser.add_argument('--inp_embeddings_path')
     parser.add_argument('--out_embeddings_path')
-    parser.add_argument('--target-lm-path')
+    parser.add_argument('--target_lm_path')
     parser.add_argument('--src-lm-path')
     parser.add_argument('--pretrained_model_path')
     parser.add_argument('--hp_file_path')
