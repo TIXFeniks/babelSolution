@@ -156,7 +156,7 @@ class GreedyInference:
 class BeamSearchInference:
 
     def __init__(self, model, batch_placeholder, min_len=None, max_len=None,
-                 beam_size=12, beam_spread=3, force_bos=True, if_no_eos='last',
+                 beam_size=6, beam_spread=3, force_bos=True, if_no_eos='last',
                  back_prop=True, swap_memory=False, **flags
                  ):
         """
