@@ -11,7 +11,7 @@ PROJECT_DIR="/nmt"
  INPUT_DATA_PATH="data"
  OUTPUT_DATA_PATH="data"
 
-mosesdecoder=$home/ext_libs/mosesdecoder
+mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 
 # What the hack is this?
 cd "$PROJECT_DIR"
@@ -93,4 +93,3 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz"
 
 cat $DATA_PATH/output.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
-
