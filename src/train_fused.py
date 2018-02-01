@@ -107,6 +107,7 @@ def train_model(model_name, config):
 
         initialize_uninitialized_variables(sess)
 
+        """
         assigns = []
         weights_by_common_name = {w.name[len(model_name)+1:]: w for w in weights}
         if config.get('target_lm_path'):
@@ -140,7 +141,7 @@ def train_model(model_name, config):
         else:
             raise ValueError("Must specify LM path!")
         sess.run(assigns)
-
+        """
         batch_size = hp.get('batch_size', 32)
         epoch = 0
         training_start_time = time()
