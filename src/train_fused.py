@@ -108,6 +108,7 @@ def train_model(model_name, config):
         initialize_uninitialized_variables(sess)
 
         assigns = []
+
         weights_by_common_name = {w.name[len(model_name)+1:]: w for w in weights}
         if config.get('target_lm_path'):
             with np.load(config.get('target_lm_path')) as dic:
@@ -115,7 +116,7 @@ def train_model(model_name, config):
                     print(key)
                     w_lm = dic[key]
                     weights_key = '/'.join(key.split('/')[1:]).replace('main/','').replace("enc",'dec').replace("inp","out")
-                    if "emb_out_bias" in weights_key: # no such thing
+                    if "emb_out_bias" in weights_key or "attn" in weights_key or "ff" in weights_key: # no such thing
                         continue
 
                     w_var = weights_by_common_name[weights_key]
