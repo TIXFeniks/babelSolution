@@ -41,7 +41,7 @@ def train_model(model_name, config):
     gpu_options = create_gpu_options(config)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-        lm = TransformerLM('lm', voc, **hp)
+        lm = TransformerLM(model_name, voc, **hp)
 
         inp = tf.placeholder(tf.int32, [None, None])
 

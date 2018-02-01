@@ -32,7 +32,8 @@ def run_model(model_name, config):
     max_len = config.get('max_input_len', 200)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-        lm = TransformerLM('lm', out_voc, **hp)
+
+        lm = TransformerLM('lm2', out_voc, **hp)
         if config.get('target_lm_path'):
             lm_weights = np.load(config.get('target_lm_path'))
             ops = []
