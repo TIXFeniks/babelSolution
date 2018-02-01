@@ -32,23 +32,9 @@ def run_model(model_name, config):
     max_len = config.get('max_input_len', 200)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-
-        lm = TransformerLM('lm', out_voc, **{
-                "hid_size": 256,
-                "ff_size": 1024,
-                "num_heads": 4,
-                "num_layers": 4,
-                "rescale_emb": True,
-                "relu_dropout": 0.0,
-                "res_dropout": 0.0,
-                "attn_dropout": 0.0,
-                "inp_emb_bias": True,
-                "res_steps": "nlda",
-                "normalize_out": True,
-                "force_bos": True
-        })
-        if config.get('target-lm-path'):
-            lm_weights = np.load(config.get('target-lm-path'))
+        lm = TransformerLM('lm', out_voc, **hp)
+        if config.get('target_lm_path'):
+            lm_weights = np.load(config.get('target_lm_path'))
             ops = []
             for w in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, lm.name):
                 if w.name in lm_weights:
@@ -57,10 +43,10 @@ def run_model(model_name, config):
                     print(w.name, 'not initialized')
 
             sess.run(ops);
+        else:
+            raise ValueError("Must specify LM path!")
 
         model = Model(model_name, inp_voc, out_voc, lm, **hp)
-
-
 
         weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, model_name)
 
@@ -77,29 +63,25 @@ def run_model(model_name, config):
         initialize_uninitialized_variables(sess)
 
         print('Generating translations')
-        src_data_ix = inp_voc.tokenize_many(src_data)
         inp = tf.placeholder(tf.int32, [None, None])
 
-        if model_name == 'gnmt':
-            sy_translations = model.symbolic_translate(inp, greedy=True)[0]
-        elif model_name == 'transformer':
-            sy_translations = model.symbolic_translate(inp, beam_size=6, len_alpha=0.6,
-                                                       back_prop=False, swap_memory=True).best_out
-        else:
-            raise ValueError('Model "{}" is unkown'.format(model))
+        assert model_name != 'gnmt', 'gnmt no longer supported'
+        sy_translations = model.symbolic_translate(inp, 'greedy', max_len=max_len,
+                                                   back_prop=False, swap_memory=True).best_out
 
         translations = []
 
-        for batch in iterate_minibatches(src_data_ix, batchsize=config.get('batch_size_for_inference')):
-            translations += sess.run([sy_translations], feed_dict={inp: batch[0][:, :max_len]})[0].tolist()
-
-        # deprocess = True gets rid of BOS and EOS
-        outputs = out_voc.detokenize_many(translations, unbpe=True, deprocess=True)
+        for batch in tqdm(iterate_minibatches(src_data, batchsize=config.get('batch_size_for_inference'))):
+            batch_data_ix = inp_voc.tokenize_many(batch[0])[:, :max_len]
+            print(batch[0])
+            trans_ix = sess.run([sy_translations], feed_dict={inp: batch_data_ix})[0]
+            # deprocess = True gets rid of BOS and EOS
+            trans = out_voc.detokenize_many(trans_ix, unbpe=True, deprocess=True)
+            translations.extend(trans)
 
         print('Saving the results into %s' % output_path)
         with open(output_path, 'wb') as output_file:
-            output_file.write('\n'.join(outputs).encode('utf-8'))
-
+            output_file.write('\n'.join(translations).encode('utf-8'))
 
 def main():
     parser = argparse.ArgumentParser(description='Run project commands')
@@ -109,7 +91,7 @@ def main():
     parser.add_argument('--model_path')
     parser.add_argument('--input_path')
     parser.add_argument('--output_path')
-    parser.add_argument('--target-lm-path')
+    parser.add_argument('--target_lm_path')
     parser.add_argument('--hp_file_path')
     parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--max_input_len', type=int)
@@ -121,6 +103,7 @@ def main():
     config = dict(filter(lambda x: x[1], config.items()))  # Getting rid of None vals
 
     print('Running %s model!' % args.model)
+    print(config)
     run_model(args.model, config)
 
 

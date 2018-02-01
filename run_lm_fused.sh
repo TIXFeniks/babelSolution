@@ -27,17 +27,17 @@ cd "$PROJECT_DIR"
 #$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
 
 # Training the model
-#PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
-#            --data_path="$DATA_PATH" \
-#            --hp_file_path="$HP_FILE_PATH" \
-#            --validate_every="$VALIDATE_EVERY" \
-#            --max_time_seconds="$MAX_TIME_SECONDS" \
-#            --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
-#            --use_early_stopping="$USE_EARLY_STOPPING" \
-#            --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
-#            --max_epochs="$MAX_EPOCHS" \
-#            --target-lm-path="trained_models/pretrained_lm_lang2-24999" \
-#            --src-lm-path="trained_models/pretrained_lm_lang1-13499"
+PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
+            --data_path="$DATA_PATH" \
+            --hp_file_path="$HP_FILE_PATH" \
+            --validate_every="$VALIDATE_EVERY" \
+            --max_time_seconds="$MAX_TIME_SECONDS" \
+            --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
+            --use_early_stopping="$USE_EARLY_STOPPING" \
+            --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
+            --max_epochs="$MAX_EPOCHS" \
+            --target_lm_path="trained_models/pretrained_lm_lang2-24999.npz" \
+            --src-lm-path="trained_models/pretrained_lm_lang1-13499.npz"
 
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME" \
@@ -46,4 +46,5 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --input_path="$DATA_PATH/bpe_input.txt" \
             --output_path="$OUTPUT_DATA_PATH/output.txt" \
             --hp_file_path="$HP_FILE_PATH" \
-            --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE"
+            --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
+            --target_lm_path="trained_models/pretrained_lm_lang2-24999.npz"
