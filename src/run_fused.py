@@ -109,6 +109,7 @@ def main():
     parser.add_argument('--model_path')
     parser.add_argument('--input_path')
     parser.add_argument('--output_path')
+    parser.add_argument('--target-lm-path')
     parser.add_argument('--hp_file_path')
     parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--max_input_len', type=int)
