@@ -6,10 +6,10 @@ OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="/nmt"
 
 # Let's keep here pathes for local testing and comment them out
-# PROJECT_DIR="."
-# DATA_PATH="data"
-# INPUT_DATA_PATH="data"
-# OUTPUT_DATA_PATH="data"
+ PROJECT_DIR="."
+ DATA_PATH="data"
+ INPUT_DATA_PATH="data"
+ OUTPUT_DATA_PATH="data"
 
 mosesdecoder=$home/ext_libs/mosesdecoder
 
@@ -17,7 +17,7 @@ mosesdecoder=$home/ext_libs/mosesdecoder
 cd "$PROJECT_DIR"
 
 # Preparing data
-$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
+# $PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
 
 ###
 # Running first LM model (for source lang)
@@ -79,8 +79,8 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NA
             --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
             --max_epochs="$MAX_EPOCHS" \
             --validate_every_epoch="$SHOULD_VALIDATE_EVERY_EPOCH" \
-            --target_lm_path="trained_models/lm2/model.npz" \
-            --src_lm_path="trained_models/lm1/model.npz"
+            --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
+            --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz"
 
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME" \
