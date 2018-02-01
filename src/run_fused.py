@@ -34,8 +34,8 @@ def run_model(model_name, config):
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
         lm = TransformerLM('lm2', out_voc, **hp)
-        if config.get('target-lm-path'):
-            lm_weights = np.load(config.get('target-lm-path'))
+        if config.get('target_lm_path'):
+            lm_weights = np.load(config.get('target_lm_path'))
             ops = []
             for w in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, lm.name):
                 if w.name in lm_weights:
@@ -96,6 +96,7 @@ def main():
     parser.add_argument('--model_path')
     parser.add_argument('--input_path')
     parser.add_argument('--output_path')
+    parser.add_argument('--target_lm_path')
     parser.add_argument('--hp_file_path')
     parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--max_input_len', type=int)
