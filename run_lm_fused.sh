@@ -1,5 +1,8 @@
 #!/bin/bash
 
+HP_FILE_PATH="$PROJECT_DIR/hp_files/transformer_midi.json"
+
+
 DATA_PATH="/nmt/data"
 INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
@@ -25,7 +28,6 @@ $PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
 
 LANG=1
 MODEL_NAME="lm$LANG"
-HP_FILE_PATH="$PROJECT_DIR/hp_files/transformer_midi.json"
 MAX_TIME_SECONDS=3600
 MAX_EPOCHS=100
 
