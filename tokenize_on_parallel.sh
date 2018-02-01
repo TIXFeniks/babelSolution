@@ -68,7 +68,7 @@ cp $inp_data/* $data/
 #	(cat $data/tok_parallel_val$lang.txt; cat $data/tok_parallel_train$lang.txt; cat $data/tok_corpus$lang.txt) > $data/tok_all_$lang.txt
 #done
 
-python3.6 $home/tokenize_parallel.py -i $inp_data -o $inp_data -r 0.05
+python3.6 $home/tokenize_all.py -i $inp_data -o $inp_data -r 0.05
 
 for lang in 1 2
 do
