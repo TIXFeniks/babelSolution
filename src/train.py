@@ -40,6 +40,9 @@ def train_model(model_name, config):
     hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
     gpu_options = create_gpu_options(config)
 
+    # Skipping check stage of the submission
+    if len(src_train) < 1000: config['max_epochs'] = 1
+
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         model = create_model(model_name, inp_voc, out_voc, hp)
 
@@ -141,6 +144,11 @@ def train_model(model_name, config):
             Returns should_continue flag, which tells us if we should continue or early stop
             """
             should_continue = True
+
+            if config.get('warm_up_num_epochs') and config.get('warm_up_num_epochs') > epoch:
+                print('Skipping validation, becaused is not warmed up yet')
+                return should_continue
+
             print('Validating')
             val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
                                                 model_name, config, max_len=max_len)
@@ -238,6 +246,7 @@ def main():
     parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--max_len', type=int)
     parser.add_argument('--validate_every_epoch', type=bool)
+    parser.add_argument('--warm_up_num_epochs', type=int)
 
     parser.add_argument('--gpu_memory_fraction', type=float)
 

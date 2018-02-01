@@ -19,6 +19,7 @@ MAX_TIME_SECONDS=3600
 MAX_EPOCHS=1000
 USE_EARLY_STOPPING=True
 EARLY_STOPPING_LAST_N=500
+WARM_UP_NUM_EPOCHS=5
 
 # What the hack is this?
 cd "$PROJECT_DIR"
@@ -35,7 +36,8 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train.py" "$MODEL_NAME" \
             --use_early_stopping="$USE_EARLY_STOPPING" \
             --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
             --max_epochs="$MAX_EPOCHS" \
-            --validate_every_epoch="$SHOULD_VALIDATE_EVERY_EPOCH"
+            --validate_every_epoch="$SHOULD_VALIDATE_EVERY_EPOCH" \
+            --warm_up_num_epochs="$WARM_UP_NUM_EPOCHS"
 
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run.py" "$MODEL_NAME" \

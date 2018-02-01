@@ -75,7 +75,7 @@ def should_stop_early(val_scores, use_last_n=5):
     if len(val_scores) < use_last_n: return False
 
     # Stop early if we did not see a good BLEU for a long time
-    return val_scores[-use_last_n] >= max(val_scores[-use_last_n + 1:])
+    return val_scores[-use_last_n] > max(val_scores[-use_last_n + 1:])
 
 
 def create_model(name, inp_voc, out_voc, hp):
