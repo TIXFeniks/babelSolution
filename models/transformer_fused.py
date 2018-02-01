@@ -44,7 +44,7 @@ class Model(TranslateModel):
                                   self.gate_hid_size,
                                   activation=tf.nn.relu)
 
-            self.gate_out = Dense('gate_hid',
+            self.gate_out = Dense('gate_out',
                                   self.gate_hid_size, 2,
                                   activation=tf.nn.sigmoid)
 
