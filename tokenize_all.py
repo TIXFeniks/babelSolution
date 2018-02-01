@@ -38,6 +38,9 @@ def tok_split_several_lines(corpus, n):
     return '\n'.join([tok_line(x.split('\t')[n]) for x in corpus]).encode('utf-8')
 
 
+def tok_several_lines(corpus):
+    return '\n'.join([tok_line(x) for x in corpus]).encode('utf-8')
+
 with open(args.out_path + '/tok_parallel_train1.txt', 'wb') as f:
     f.write(tok_split_several_lines(lines_train, 0))
     # f.write(tok(lines_train, 0))
@@ -64,11 +67,11 @@ with open(args.inp_path + '/corpus1.txt', encoding = 'utf-8') as f:
 with open(args.inp_path + '/corpus2.txt', encoding = 'utf-8') as f:
     lines2 = [x[:-1] for x in f.readlines()]
 with open(args.inp_path + '/input.txt', encoding='utf-8') as f:
-    lines2 = [x[:-1] for x in f.readlines()]
+    lines_inp = [x[:-1] for x in f.readlines()]
 
 with open(args.out_path + '/tok_corpus1.txt', 'wb') as f:
-    f.write(tok_split_several_lines(lines1, 0))
+    f.write(tok_split_several_lines(lines1))
 with open(args.out_path + '/tok_corpus2.txt', 'wb') as f:
-    f.write(tok_split_several_lines(lines2, 1))
+    f.write(tok_split_several_lines(lines2))
 with open(args.out_path + '/tok_input.txt', 'wb') as f:
-    f.write(tok_split_several_lines(lines2, 1))
+    f.write(tok_split_several_lines(lines_inp))
