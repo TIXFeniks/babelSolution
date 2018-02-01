@@ -3,8 +3,8 @@
 EXPERIMENT_NAME=$1
 
 # Fetching the branch
-git reset --hard && git clean -fd
-git fetch --all
+git clone https://github.com/TIXFeniks/babelSolution "$EXPERIMENT_NAME"
+cd "$EXPERIMENT_NAME"
 git checkout "$EXPERIMENT_NAME"
 
 # Running experiment
@@ -25,6 +25,9 @@ sudo docker push "universome/$EXPERIMENT_NAME"
 # Let's cat metadata.json which can be copypasted
 METADATA="{\"image\": \"universome/$EXPERIMENT_NAME\", \"entry_point\": \"/nmt/run_lm_fused.sh\"}"
 echo $METADATA
+
+cd ..
+rm -r "$EXPERIMENT_NAME"
 
 # In case of there are too many docker containers
 # sudo docker stop $(sudo docker ps -a -q) && sudo docker rm $(sudo docker ps -a -q)
