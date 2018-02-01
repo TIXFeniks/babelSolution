@@ -43,6 +43,9 @@ def train_model(model_name, config):
     hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
     gpu_options = create_gpu_options(config)
 
+    # Skipping check stage of the submission
+    if len(src_train) < 1000: config['max_epochs'] = 1
+
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
         lm = TransformerLM('lm2', out_voc, **hp)
         if config.get('target-lm-path'):
@@ -133,11 +136,14 @@ def train_model(model_name, config):
                     assigns.append(tf.assign(w_var,w_lm))
         sess.run(assigns)
 
-        batch_size = hp.get('batch_size', 16)
+        batch_size = hp.get('batch_size', 32)
         epoch = 0
         training_start_time = time()
         loss_history = []
         val_scores = []
+
+        num_iters_done = 0
+        should_start_next_epoch = True # We need this var to break outer loop
 
         def save_model():
             save_path = '{}/model.npz'.format(model_path)
@@ -152,8 +158,33 @@ def train_model(model_name, config):
             state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
             np.savez('{}/{}.iter-{}.npz'.format(model_path, 'optimizer_state', num_iters_done), **state_dict)
 
-        num_iters_done = 0
-        should_start_next_epoch = True # We need this var to break outer loop
+        def validate():
+            """
+            Returns should_continue flag, which tells us if we should continue or early stop
+            """
+            should_continue = True
+
+            if config.get('warm_up_num_epochs') and config.get('warm_up_num_epochs') > epoch:
+                print('Skipping validation, becaused is not warmed up yet')
+                return should_continue
+
+            print('Validating')
+            val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
+                                                model_name, config, max_len=max_len)
+            val_scores.append(val_score)
+            print('Validation BLEU: {:0.3f}'.format(val_score))
+
+            # Save model if this is our best model
+            if np.argmax(val_scores) == len(val_scores)-1:
+                print('Saving model because it has the highest validation BLEU.')
+                save_model()
+                save_optimizer_state(num_iters_done+1)
+
+            if config.get('use_early_stopping') and should_stop_early(val_scores, config.get('early_stopping_last_n')):
+                print('Model did not improve for last %s steps. Early stopping.' % config.get('early_stopping_last_n'))
+                should_continue = False
+
+            return should_continue
 
         while should_start_next_epoch:
             batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
@@ -173,21 +204,9 @@ def train_model(model_name, config):
                     t.set_description('Iterations done: {}. Loss: {:.2f}'
                                       .format(num_iters_done, ewma(np.array(loss_history[-50:]), span=50)[-1]))
 
-                    if (num_iters_done+1) % config.get('validate_every', 500) == 0:
-                        print('Validating')
-                        val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
-                                                           model_name, config, max_len=max_len)
-                        val_scores.append(val_score)
-                        print('Validation BLEU: {:0.3f}'.format(val_score))
-
-                        # Save model if this is our best model
-                        if np.argmax(val_scores) == len(val_scores)-1:
-                            print('Saving model because it has the highest validation BLEU.')
-                            save_model()
-                            save_optimizer_state(num_iters_done+1)
-
-                        if config.get('use_early_stopping') and should_stop_early(val_scores, config.get('early_stopping_last_n')):
-                            print('Model did not improve for last %s steps. Early stopping.' % config.get('early_stopping_last_n'))
+                    if not config.get('validate_every_epoch') and (num_iters_done+1) % config.get('validate_every', 500) == 0:
+                        should_continue = validate()
+                        if not should_continue:
                             should_start_next_epoch = False
                             break
 
@@ -202,6 +221,9 @@ def train_model(model_name, config):
                             break
 
                 epoch +=1
+
+                if config.get('validate_every_epoch'):
+                    should_start_next_epoch = validate()
 
                 if config.get('max_epochs') and config.get('max_epochs') == epoch:
                     print('Maximum amount of epochs reached. Stopping.')
@@ -242,6 +264,8 @@ def main():
     parser.add_argument('--max_time_seconds', type=int)
     parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--max_len', type=int)
+    parser.add_argument('--validate_every_epoch', type=bool)
+    parser.add_argument('--warm_up_num_epochs', type=int)
 
     parser.add_argument('--gpu_memory_fraction', type=float)
 
