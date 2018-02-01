@@ -1,11 +1,14 @@
 #!/bin/bash
 
-HP_FILE_PATH="$PROJECT_DIR/hp_files/transformer_midi.json"
-
 DATA_PATH="/nmt/data"
 INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="/nmt"
+
+
+HP_FILE_PATH="$PROJECT_DIR/hp_files/transformer_midi.json"
+
+
 
 # Let's keep here pathes for local testing and comment them out
 # PROJECT_DIR="."
