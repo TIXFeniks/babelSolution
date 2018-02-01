@@ -72,7 +72,6 @@ def run_model(model_name, config):
 
         for batch in tqdm(iterate_minibatches(src_data, batchsize=config.get('batch_size_for_inference'))):
             batch_data_ix = inp_voc.tokenize_many(batch[0])[:, :max_len]
-            print(batch[0])
             trans_ix = sess.run([sy_translations], feed_dict={inp: batch_data_ix})[0]
             # deprocess = True gets rid of BOS and EOS
             trans = out_voc.detokenize_many(trans_ix, unbpe=True, deprocess=True)
@@ -102,7 +101,7 @@ def main():
     config = dict(filter(lambda x: x[1], config.items()))  # Getting rid of None vals
 
     print('Running %s model!' % args.model)
-    print(config)
+    print('Config', config)
     run_model(args.model, config)
 
 
