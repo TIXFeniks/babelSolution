@@ -3,3 +3,4 @@ trained_models/
 .vscode/
 .ipynb_checkpoints/
 __pycache__/
+ext_libs/

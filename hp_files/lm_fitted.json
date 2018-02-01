@@ -8,6 +8,7 @@
         "res_dropout": 0.0,
         "attn_dropout": 0.0,
         "inp_emb_bias": true,
+        "out_emb_bias": true,
         "res_steps": "nlda",
         "normalize_out": true,
         "force_bos": true

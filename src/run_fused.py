@@ -13,6 +13,9 @@ from src.training_utils import *
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables
 
 
+from models.transformer_fused import Model
+from models.transformer_lm import TransformerLM
+
 def run_model(model_name, config):
     """Loads model and runs it on data"""
 
@@ -29,7 +32,21 @@ def run_model(model_name, config):
     max_len = config.get('max_input_len', 200)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-        model = create_model(model_name, inp_voc, out_voc, hp)
+        lm = TransformerLM('lm', out_voc, **hp)
+        if config.get('target_lm_path'):
+            lm_weights = np.load(config.get('target_lm_path'))
+            ops = []
+            for w in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, lm.name):
+                if w.name in lm_weights:
+                    ops.append(tf.assign(w, lm_weights[w.name]))
+                else:
+                    print(w.name, 'not initialized')
+
+            sess.run(ops);
+        else:
+            raise ValueError("Must specify LM path!")
+        model = Model(model_name, inp_voc, out_voc, lm, **hp)
+
         weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, model_name)
 
         # Loading model state
@@ -54,6 +71,7 @@ def run_model(model_name, config):
 
         for batch in tqdm(iterate_minibatches(src_data, batchsize=config.get('batch_size_for_inference'))):
             batch_data_ix = inp_voc.tokenize_many(batch[0])[:, :max_len]
+            print(batch[0])
             trans_ix = sess.run([sy_translations], feed_dict={inp: batch_data_ix})[0]
             # deprocess = True gets rid of BOS and EOS
             trans = out_voc.detokenize_many(trans_ix, unbpe=True, deprocess=True)
@@ -71,6 +89,7 @@ def main():
     parser.add_argument('--model_path')
     parser.add_argument('--input_path')
     parser.add_argument('--output_path')
+    parser.add_argument('--target_lm_path')
     parser.add_argument('--hp_file_path')
     parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--max_input_len', type=int)
@@ -82,6 +101,7 @@ def main():
     config = dict(filter(lambda x: x[1], config.items()))  # Getting rid of None vals
 
     print('Running %s model!' % args.model)
+    print(config)
     run_model(args.model, config)
 
 

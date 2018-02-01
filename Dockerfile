@@ -22,7 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN add-apt-repository ppa:jonathonf/python-3.6 && \
     apt-get update && \
     apt-get install -y --no-install-recommends python3.6 && \
-    apt-get install -y python3.6-dev
+    apt-get install -y python3.6-dev && \
+    apt-get install -y python3-tk
 
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.6
 
@@ -30,12 +31,14 @@ RUN pip install tensorflow-gpu==1.4.0
 RUN pip install Cython
 RUN pip install tqdm pandas matplotlib fasttext keras sklearn
 
-RUN mkdir /nmt
+RUN pip install tensorflow-gpu==1.4.0 && \
+    pip install Cython && \
+    pip install tqdm pandas matplotlib fasttext keras sklearn
+
+RUN mkdir /nmt && mkdir /nmt/ext_libs
 WORKDIR /nmt
 
-RUN mkdir /nmt/ext_libs
-RUN git clone https://github.com/moses-smt/mosesdecoder.git /nmt/ext_libs/mosesdecoder
-RUN git clone https://github.com/rsennrich/subword-nmt.git /nmt/ext_libs/subword-nmt
-RUN apt-get install -y python3-tk
+RUN git clone https://github.com/moses-smt/mosesdecoder.git /nmt/ext_libs/mosesdecoder && \
+    git clone https://github.com/rsennrich/subword-nmt.git /nmt/ext_libs/subword-nmt
 
 COPY . /nmt

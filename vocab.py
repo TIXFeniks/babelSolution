@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Vocab:
     """
     Vocab converts between strings, tokens and token indices.
@@ -8,14 +9,6 @@ class Vocab:
     Here's a tour to what it does: http://bit.ly/2BDupuH
     """
     _default_tokens = ("__BOS__", "__EOS__", "__UNK__")
-
-    @staticmethod
-    def remove_bpe(s):
-        return s.replace('@@ ', '').replace("&apos;", "'").replace(" '", "'")  # TODO: make this generic
-
-    @staticmethod
-    def remove_bpe_many(sentences):
-        return [Vocab.remove_bpe(s) for s in sentences]
 
     def __init__(self, tokens):
         tokens = tuple(tokens)
@@ -109,6 +102,23 @@ class Vocab:
                 tokens.update([token])
 
         return Vocab(list(cls._default_tokens) + sorted(tokens))
+
+    @staticmethod
+    def remove_bpe(s):
+        return s.replace('@@ ', '').replace("&apos;", "'").replace(" '", "'")  # TODO: make this generic
+
+    @classmethod
+    def remove_bpe_many(cls, sentences):
+        return [cls.remove_bpe(s) for s in sentences]
+
+    @classmethod
+    def deprocess(cls, tokens, sep=' '):
+        tokens = [t for t in tokens if t not in cls._default_tokens]
+        return tokens if sep is None else sep.join(tokens)
+
+    @classmethod
+    def remove_bpe_many(cls, sentences, sep=' '):
+        return [cls.deprocess(s, sep) for s in sentences]
 
     @classmethod
     def from_sequences(cls, sentences, separator=' '):

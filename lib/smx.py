@@ -124,7 +124,6 @@ def get_library():
     if _library is None:
         so_fname = 'sliced_argmax.so' if _have_gpu() else 'sliced_argmax_cpu.so'
         so_path = os.path.join(*(os.path.split(__file__)[:-1] + (so_fname,)))
-        print(so_path)
         _library = tf.load_op_library(so_path)
 
     return _library

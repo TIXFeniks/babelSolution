@@ -50,7 +50,8 @@ def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, mode
     if model_name == 'gnmt':
         sy_translations = model.symbolic_translate(inp, greedy=True)[0]
     elif model_name == 'transformer':
-        sy_translations = model.symbolic_translate(inp, mode='greedy', max_len=100).best_out
+        sy_translations = model.symbolic_translate(inp, mode='greedy', max_len=max_len,
+                                                   back_prop=False, swap_memory=True).best_out
     else:
         raise NotImplemented("Unknown model")
 
@@ -59,10 +60,12 @@ def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, mode
         translations += sess.run([sy_translations], feed_dict={inp: batch[0][:, :max_len]})[0].tolist()
 
     outputs = out_voc.detokenize_many(translations, unbpe=True, deprocess=True)
-    targets = Vocab.remove_bpe_many(dst_val)
-    references = [[t] for t in targets]
+    outputs = [out.split() for out in outputs]
 
-    bleu = compute_bleu(references, outputs)[0]
+    targets = out_voc.remove_bpe_many(dst_val)
+    targets = [[t.split()] for t in targets]
+
+    bleu = compute_bleu(targets, outputs)[0]
 
     return bleu
 

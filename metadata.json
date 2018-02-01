@@ -1,4 +1,4 @@
 {
-    "image": "universome/kek",
+    "image": "universome/default_exp",
     "entry_point": "/nmt/run.sh"
 }
