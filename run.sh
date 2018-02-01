@@ -12,7 +12,7 @@ PROJECT_DIR="/nmt"
 # OUTPUT_DATA_PATH="data"
 
 MODEL_NAME="transformer"
-HP_FILE_PATH="$PROJECT_DIR/hp_files/stable_transformer.json"
+HP_FILE_PATH="$PROJECT_DIR/hp_files/stable_transformer_greedy.json"
 BATCH_SIZE_FOR_INFERENCE=64
 MAX_TIME_SECONDS=600
 VALIDATE_EVERY=5000
