@@ -32,23 +32,9 @@ def run_model(model_name, config):
     max_len = config.get('max_input_len', 200)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-
-        lm = TransformerLM('lm', out_voc, **{
-                "hid_size": 256,
-                "ff_size": 1024,
-                "num_heads": 4,
-                "num_layers": 4,
-                "rescale_emb": True,
-                "relu_dropout": 0.0,
-                "res_dropout": 0.0,
-                "attn_dropout": 0.0,
-                "inp_emb_bias": True,
-                "res_steps": "nlda",
-                "normalize_out": True,
-                "force_bos": True
-        })
-        if config.get('target-lm-path'):
-            lm_weights = np.load(config.get('target-lm-path'))
+        lm = TransformerLM('lm', out_voc, **hp)
+        if config.get('target_lm_path'):
+            lm_weights = np.load(config.get('target_lm_path'))
             ops = []
             for w in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, lm.name):
                 if w.name in lm_weights:
@@ -57,10 +43,8 @@ def run_model(model_name, config):
                     print(w.name, 'not initialized')
 
             sess.run(ops);
-
         else:
             raise ValueError("Must specify LM path!")
-
         model = Model(model_name, inp_voc, out_voc, lm, **hp)
 
         weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, model_name)
@@ -81,8 +65,7 @@ def run_model(model_name, config):
         inp = tf.placeholder(tf.int32, [None, None])
 
         assert model_name != 'gnmt', 'gnmt no longer supported'
-        sy_translations = model.symbolic_translate(inp, 'greedy', max_len=max_len,
-                                                   back_prop=False, swap_memory=True).best_out
+        sy_translations = model.symbolic_translate(inp, back_prop=False, swap_memory=True).best_out
 
         translations = []
 
@@ -106,6 +89,7 @@ def main():
     parser.add_argument('--model_path')
     parser.add_argument('--input_path')
     parser.add_argument('--output_path')
+    parser.add_argument('--target_lm_path')
     parser.add_argument('--hp_file_path')
     parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--max_input_len', type=int)
@@ -117,6 +101,7 @@ def main():
     config = dict(filter(lambda x: x[1], config.items()))  # Getting rid of None vals
 
     print('Running %s model!' % args.model)
+    print(config)
     run_model(args.model, config)
 
 
