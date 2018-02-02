@@ -6,7 +6,7 @@
         "rescale_emb": true,
         "relu_dropout": 0.0,
         "res_dropout": 0.0,
-        "attn_dropout": 0.0,
+        "attn_dropout": 0.2,
         "inp_emb_bias": true,
         "res_steps": "nlda",
         "normalize_out": true,
