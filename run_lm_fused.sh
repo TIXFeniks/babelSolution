@@ -5,6 +5,14 @@
 # OUTPUT_DATA_PATH="/output"
 # PROJECT_DIR="/nmt"
 
+DATA_PATH="/nmt/data"
+INPUT_DATA_PATH="/data"
+OUTPUT_DATA_PATH="/output"
+PROJECT_DIR="/nmt"
+
+HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_0_9.json"
+
+
 # Let's keep here pathes for local testing and comment them out
 PROJECT_DIR="."
 DATA_PATH="data"
@@ -16,7 +24,7 @@ HP_FILE_PATH="$PROJECT_DIR/hp_files/mini_transformer.json"
 # mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 
 # Preparing data
-# $PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$DATA_PATH"
+# $PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 16000 4000
 
 ###
 # Running first LM model (for source lang)
@@ -64,12 +72,11 @@ BATCH_SIZE_FOR_INFERENCE=16
 MAX_TIME_SECONDS=120
 VALIDATE_EVERY_EPOCH=1 # Validating every 2nd epoch
 MAX_EPOCHS=1000
-USE_EARLY_STOPPING=False
+USE_EARLY_STOPPING=False # TODO: CHANGE IT WHEN FINISH!
 EARLY_STOPPING_LAST_N=10
 MAX_NUM_MODELS=4
 GPU_MEMORY_FRACTION=0.1
 
-# Training the model
 # PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
 #             --data_path="$DATA_PATH" \
 #             --hp_file_path="$HP_FILE_PATH" \
@@ -95,4 +102,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
             --gpu_memory_fraction="$GPU_MEMORY_FRACTION"
 
+
 cat $DATA_PATH/output.tok.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
+
+python3.6 final_fix.py $DATA_PATH/output.tok.txt $OUTPUT_DATA_PATH/output.txt
