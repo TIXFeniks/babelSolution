@@ -1,17 +1,11 @@
 #!/bin/bash
 
-# DATA_PATH="/nmt/data"
-# INPUT_DATA_PATH="/data"
-# OUTPUT_DATA_PATH="/output"
-# PROJECT_DIR="/nmt"
-
 DATA_PATH="/nmt/data"
 INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="/nmt"
 
 HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_0_9.json"
-
 
 # Let's keep here pathes for local testing and comment them out
 PROJECT_DIR="."
@@ -21,10 +15,10 @@ OUTPUT_DATA_PATH="outputs"
 
 HP_FILE_PATH="$PROJECT_DIR/hp_files/mini_transformer.json"
 
-# mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
+mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 
 # Preparing data
-# $PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 16000 4000
+$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 16000 4000
 
 ###
 # Running first LM model (for source lang)
@@ -36,13 +30,13 @@ MAX_TIME_SECONDS=30
 MAX_EPOCHS=100
 
 # Running the model
-# PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
-#             --data_path="$DATA_PATH" \
-#             --hp_file_path="$HP_FILE_PATH" \
-#             --lang="$LANG" \
-#             --max_epochs=$MAX_EPOCHS \
-#             --max_time_seconds=$MAX_TIME_SECONDS \
-#             --gpu_memory_fraction=0.5
+PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
+            --data_path="$DATA_PATH" \
+            --hp_file_path="$HP_FILE_PATH" \
+            --lang="$LANG" \
+            --max_epochs=$MAX_EPOCHS \
+            --max_time_seconds=$MAX_TIME_SECONDS \
+            --gpu_memory_fraction=0.5
 
 ###
 # Running second LM model (for target lang)
@@ -54,13 +48,13 @@ MAX_TIME_SECONDS=30
 MAX_EPOCHS=100
 
 # Running the model
-# PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
-#             --data_path="$DATA_PATH" \
-#             --hp_file_path="$HP_FILE_PATH" \
-#             --lang="$LANG" \
-#             --max_epochs=$MAX_EPOCHS \
-#             --max_time_seconds=$MAX_TIME_SECONDS \
-#             --gpu_memory_fraction=0.5
+PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
+            --data_path="$DATA_PATH" \
+            --hp_file_path="$HP_FILE_PATH" \
+            --lang="$LANG" \
+            --max_epochs=$MAX_EPOCHS \
+            --max_time_seconds=$MAX_TIME_SECONDS \
+            --gpu_memory_fraction=0.5
 
 
 ###########

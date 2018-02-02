@@ -92,13 +92,6 @@ def run_model(model_name, config):
         translations = []
 
         for batch in tqdm(iterate_minibatches(src_data, batchsize=config.get('batch_size_for_inference'))):
-<<<<<<< HEAD
-            batch_data_ix = inp_voc.tokenize_many(batch[0])[:, :max_len]
-            trans_ix = sess.run([sy_translations], feed_dict={inp: batch_data_ix})[0]
-            # parameter "deprocess=True" gets rid of BOS and EOS
-            trans = out_voc.detokenize_many(trans_ix, unbpe=True, deprocess=True)
-=======
-
             try:
                 batch_data_ix = inp_voc.tokenize_many(batch[0])[:, :max_len]
                 trans_ix = sess.run([sy_translations], feed_dict={inp: batch_data_ix})[0]
@@ -124,7 +117,6 @@ def run_model(model_name, config):
                         # we failed this very row. Use src as fallback
                         trans.append(str(row).replace('\n', ''))  # cast to str just in case
 
->>>>>>> exp_base_16_4_alpha
             translations.extend(trans)
 
         print('Saving the results into %s' % output_path)
