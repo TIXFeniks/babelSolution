@@ -6,7 +6,7 @@ OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="/nmt"
 
 
-HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_0_9.json"
+HP_FILE_PATH="$PROJECT_DIR/hp_files/lm_fitted.json"
 
 
 
@@ -22,7 +22,7 @@ mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 cd "$PROJECT_DIR"
 
 # Preparing data
-$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 16000 4000
+$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 4000 4000
 
 ###
 # Running first LM model (for source lang)
@@ -65,12 +65,12 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
 
 MODEL_NAME="transformer"
 BATCH_SIZE_FOR_INFERENCE=32
-MAX_TIME_SECONDS=10800
+MAX_TIME_SECONDS=7200
 SHOULD_VALIDATE_EVERY_EPOCH=True
 MAX_EPOCHS=1000
 USE_EARLY_STOPPING=True
-EARLY_STOPPING_LAST_N=10
-WARM_UP_NUM_EPOCHS=25
+EARLY_STOPPING_LAST_N=5
+WARM_UP_NUM_EPOCHS=5
 
 # Training the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
