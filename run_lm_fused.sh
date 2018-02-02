@@ -94,4 +94,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz"
 
+
 cat $DATA_PATH/output.tok.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
+
+python3.6 final_fix.py $DATA_PATH/output.tok.txt $OUTPUT_DATA_PATH/output.txt
