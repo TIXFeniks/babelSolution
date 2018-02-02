@@ -6,10 +6,10 @@ OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="/nmt"
 
 # Let's keep here pathes for local testing and comment them out
-PROJECT_DIR="."
-DATA_PATH="data"
-INPUT_DATA_PATH="data"
-OUTPUT_DATA_PATH="data"
+#PROJECT_DIR="."
+#DATA_PATH="data"
+#INPUT_DATA_PATH="data"
+#OUTPUT_DATA_PATH="data"
 
 HP_FILE_PATH="$PROJECT_DIR/hp_files/lm_fitted.json"
 
@@ -19,7 +19,14 @@ mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 cd "$PROJECT_DIR"
 
 # Preparing data
-#$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
+$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
+
+python3.6 check_tokenization.py "$DATA_PATH/bpe_input.txt" "$INPUT_DATA_PATH/input.txt"
+
+if [[ $? -ne 0 ]]; then
+    echo "FAIL!!!!"
+    exit 1
+fi
 
 ###
 # Running first LM model (for source lang)
@@ -27,33 +34,34 @@ cd "$PROJECT_DIR"
 
 LANG=1
 MODEL_NAME="lm$LANG"
-MAX_TIME_SECONDS=3600
+MAX_TIME_SECONDS=300
 MAX_EPOCHS=100
 
 # Running the model
-#PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
-#            --data_path="$DATA_PATH" \
-#            --hp_file_path="$HP_FILE_PATH" \
-#            --lang="$LANG" \
-#            --max_epochs=$MAX_EPOCHS \
-#            --max_time_seconds=$MAX_TIME_SECONDS
+PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
+            --data_path="$DATA_PATH" \
+            --hp_file_path="$HP_FILE_PATH" \
+            --lang="$LANG" \
+            --max_epochs=$MAX_EPOCHS \
+            --max_time_seconds=$MAX_TIME_SECONDS
 
 ###
 # Running second LM model (for target lang)
 ###
 
-#LANG=2
-#MODEL_NAME="lm$LANG"
-#MAX_TIME_SECONDS=3600
-#MAX_EPOCHS=100
-#
-## Running the model
-#PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
-#            --data_path="$DATA_PATH" \
-#            --hp_file_path="$HP_FILE_PATH" \
-#            --lang="$LANG" \
-#            --max_epochs=$MAX_EPOCHS \
-#            --max_time_seconds=$MAX_TIME_SECONDS
+LANG=2
+MODEL_NAME="lm$LANG"
+MAX_TIME_SECONDS=300
+MAX_EPOCHS=100
+
+# Running the model
+PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
+            --data_path="$DATA_PATH" \
+            --hp_file_path="$HP_FILE_PATH" \
+            --lang="$LANG" \
+            --max_epochs=$MAX_EPOCHS \
+            --max_time_seconds=$MAX_TIME_SECONDS
+
 
 
 ###########
@@ -62,13 +70,15 @@ MAX_EPOCHS=100
 
 MODEL_NAME="transformer"
 BATCH_SIZE_FOR_INFERENCE=32
-MAX_TIME_SECONDS=9000
+
+MAX_TIME_SECONDS=300
+
 SHOULD_VALIDATE_EVERY_EPOCH=True
 MAX_EPOCHS=1000
 USE_EARLY_STOPPING=True
 EARLY_STOPPING_LAST_N=5
 
- Training the model
+# Training the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
             --data_path="$DATA_PATH" \
             --hp_file_path="$HP_FILE_PATH" \
@@ -91,4 +101,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz"
 
+
 cat $DATA_PATH/output.tok.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
+
+python3.6 final_fix.py $DATA_PATH/output.tok.txt $OUTPUT_DATA_PATH/output.txt
