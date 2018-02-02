@@ -3,7 +3,7 @@ import tensorflow as tf
 from functools import lru_cache
 from lib.smx import sliced_argmax
 from lib.utils import nested_map, is_namedtuple
-from lib.inference import GreedyInference, BeamSearchInference
+from lib.inference import GreedyInference, PenalizedBeamSearchInference
 
 
 class TranslateModel:
@@ -151,7 +151,7 @@ class TranslateModel:
                 **flags)
 
         elif mode == 'beam_search':
-            return BeamSearchInference(
+            return PenalizedBeamSearchInference(
                 model=self,
                 batch_placeholder=batch_placeholder,
                 force_bos=self.hp.get('force_bos', False),
