@@ -71,16 +71,49 @@ def run_model(model_name, config):
         translations = []
 
         for batch in tqdm(iterate_minibatches(src_data, batchsize=config.get('batch_size_for_inference'))):
-            batch_data_ix = inp_voc.tokenize_many(batch[0])[:, :max_len]
-            trans_ix = sess.run([sy_translations], feed_dict={inp: batch_data_ix})[0]
-            # deprocess = True gets rid of BOS and EOS
-            trans = out_voc.detokenize_many(trans_ix, unbpe=True, deprocess=True)
+
+            try:
+                batch_data_ix = inp_voc.tokenize_many(batch[0])[:, :max_len]
+                trans_ix = sess.run([sy_translations], feed_dict={inp: batch_data_ix})[0]
+                # deprocess = True gets rid of BOS and EOS
+                trans = out_voc.detokenize_many(trans_ix, unbpe=True, deprocess=True)
+
+            except:
+                # we failed this batch. At least one sample is broken
+                trans = []
+                src_rows = batch[0]
+                for row in src_rows:
+                    try:
+                        row_ix = inp_voc.tokenize_many([row])[:, :max_len]  # [1, inp_len]
+
+                        row_trans_ix = sess.run([sy_translations],
+                                                feed_dict={inp: row_ix})[0]  # [1, out_len]
+
+                        # deprocess = True gets rid of BOS and EOS
+                        row_trans = out_voc.detokenize_many(row_trans_ix,
+                                                            unbpe=True, deprocess=True)  # [1]
+                        trans.append(row_trans[0])
+                    except:
+                        # we failed this very row. Use src as fallback
+                        trans.append(str(row).replace('\n', ''))  # cast to str just in case
+
             translations.extend(trans)
 
         print('Saving the results into %s' % output_path)
-        with open(output_path, 'wb') as output_file:
-            output_file.write('\n'.join(translations).encode('utf-8'))
 
+        try:
+            with open(output_path, 'wb') as output_file:
+                output_file.write('\n'.join(translations).encode('utf-8'))
+        except:
+            # we failed at conversion somewhere. Write one row at a time
+            with open(output_path, 'w') as output_file:
+                for translation in translations:
+                    try:
+                        output_file.write(translation.encode('utf-8'))
+                    except:
+                        output_file.write(" - failed writing this line to file , . !")
+
+                    output_file.write("\n")
 def main():
     parser = argparse.ArgumentParser(description='Run project commands')
 
