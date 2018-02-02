@@ -24,6 +24,13 @@ cd "$PROJECT_DIR"
 # Preparing data
 $PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
 
+python3.6 check_tokenization.py "$DATA_PATH/bpe_input.txt" "$INPUT_DATA_PATH/input.txt"
+
+if [[ $? -ne 0 ]]; then
+    echo "FAIL!!!!"
+    exit 1
+fi
+
 ###
 # Running first LM model (for source lang)
 ###
