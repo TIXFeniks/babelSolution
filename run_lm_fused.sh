@@ -8,10 +8,10 @@ PROJECT_DIR="/nmt"
 HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_0_9.json"
 
 # Let's keep here pathes for local testing and comment them out
-PROJECT_DIR="."
-DATA_PATH="data"
-INPUT_DATA_PATH="data_small"
-OUTPUT_DATA_PATH="outputs"
+# PROJECT_DIR="."
+# DATA_PATH="data"
+# INPUT_DATA_PATH="data_small"
+# OUTPUT_DATA_PATH="outputs"
 
 HP_FILE_PATH="$PROJECT_DIR/hp_files/mini_transformer.json"
 
@@ -26,7 +26,7 @@ $PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 16000 4000
 
 LANG=1
 MODEL_NAME="lm$LANG"
-MAX_TIME_SECONDS=30
+MAX_TIME_SECONDS=300
 MAX_EPOCHS=100
 
 # Running the model
@@ -35,8 +35,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
             --hp_file_path="$HP_FILE_PATH" \
             --lang="$LANG" \
             --max_epochs=$MAX_EPOCHS \
-            --max_time_seconds=$MAX_TIME_SECONDS \
-            --gpu_memory_fraction=0.5
+            --max_time_seconds=$MAX_TIME_SECONDS
 
 ###
 # Running second LM model (for target lang)
@@ -44,7 +43,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
 
 LANG=2
 MODEL_NAME="lm$LANG"
-MAX_TIME_SECONDS=30
+MAX_TIME_SECONDS=300
 MAX_EPOCHS=100
 
 # Running the model
@@ -53,8 +52,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
             --hp_file_path="$HP_FILE_PATH" \
             --lang="$LANG" \
             --max_epochs=$MAX_EPOCHS \
-            --max_time_seconds=$MAX_TIME_SECONDS \
-            --gpu_memory_fraction=0.5
+            --max_time_seconds=$MAX_TIME_SECONDS
 
 
 ###########
@@ -63,14 +61,13 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
 
 MODEL_NAME="transformer"
 BATCH_SIZE_FOR_INFERENCE=16
-MAX_TIME_SECONDS=120
+MAX_TIME_SECONDS=300
 VALIDATE_EVERY_EPOCH=1 # Validating every 2nd epoch
 MAX_EPOCHS=1000
 USE_EARLY_STOPPING=False # TODO: CHANGE IT WHEN FINISH!
 EARLY_STOPPING_LAST_N=10
 MAX_NUM_MODELS=4
 MIN_INTERVAL_BETWEEN_SAVES=5
-GPU_MEMORY_FRACTION=0.1
 
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
             --data_path="$DATA_PATH" \
@@ -84,7 +81,6 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NA
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
             --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz" \
             --max_num_models="$MAX_NUM_MODELS" \
-            --gpu_memory_fraction="$GPU_MEMORY_FRACTION" \
             --min_interval_between_saves="$MIN_INTERVAL_BETWEEN_SAVES"
 
 # Running the model
@@ -95,8 +91,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --output_path="$DATA_PATH/output.tok.txt" \
             --hp_file_path="$HP_FILE_PATH" \
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
-            --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
-            --gpu_memory_fraction="$GPU_MEMORY_FRACTION"
+            --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz"
 
 
 cat $DATA_PATH/output.tok.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
