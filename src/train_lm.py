@@ -169,6 +169,7 @@ def main():
     config = dict(filter(lambda x: x[1], config.items())) # Getting rid of None vals
 
     print('Traning the %s' % args.model)
+    print('Config:', config)
     train_model(args.model, config)
 
 

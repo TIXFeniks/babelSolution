@@ -39,6 +39,8 @@ def train_model(model_name, config):
     out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
     max_len = config.get('max_len', 200)
 
+    max_num_models = config.get('max_num_models', 4)
+
     # Hyperparameters
     hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
     gpu_options = create_gpu_options(config)
@@ -57,7 +59,7 @@ def train_model(model_name, config):
                 else:
                     print(w.name, 'not initialized')
 
-            sess.run(ops);
+            sess.run(ops)
         else:
             raise ValueError("Must specify LM path!")
         model = Model(model_name, inp_voc, out_voc, lm, **hp)
@@ -92,18 +94,6 @@ def train_model(model_name, config):
 
             assigns = [tf.assign(var, tf.constant(w_values[var.name])) for var in weights]
             sess.run(assigns)
-
-        if config.get('optimizer_state_path'):
-            pass # TODO(universome): load optimizer state
-
-        # TODO(universome): embeddings will be in a different format
-        if config.get('inp_embeddings_path'):
-            embeddings = np.load(config.get('inp_embeddings_path'))['arr_0'].astype(np.float32)
-            sess.run(tf.assign(model.emb_inp.trainable_weights[0], tf.constant(embeddings)))
-
-        if config.get('out_embeddings_path'):
-            embeddings = np.load(config.get('out_embeddings_path'))['arr_0'].astype(np.float32)
-            sess.run(tf.assign(model.emb_out.trainable_weights[0], tf.constant(embeddings)))
 
         initialize_uninitialized_variables(sess)
 
@@ -150,18 +140,17 @@ def train_model(model_name, config):
         num_iters_done = 0
         should_start_next_epoch = True # We need this var to break outer loop
 
+        global num_model_saves_counter; num_model_saves_counter = 0
         def save_model():
-            save_path = '{}/model.npz'.format(model_path)
+            global num_model_saves_counter
+            save_path = '{}/model_{}.npz'.format(model_path, num_model_saves_counter % max_num_models)
             print('Saving the model into %s' %save_path)
 
             w_values = sess.run(weights)
             weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
             np.savez(save_path, **weights_dict)
 
-        def save_optimizer_state(num_iters_done):
-            # TODO(universome): Do we need iterations in optimizer state?
-            state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
-            np.savez('{}/{}.iter-{}.npz'.format(model_path, 'optimizer_state', num_iters_done), **state_dict)
+            num_model_saves_counter += 1
 
         def validate():
             """
@@ -183,7 +172,6 @@ def train_model(model_name, config):
             if np.argmax(val_scores) == len(val_scores)-1:
                 print('Saving model because it has the highest validation BLEU.')
                 save_model()
-                save_optimizer_state(num_iters_done+1)
 
             if config.get('use_early_stopping') and should_stop_early(val_scores, config.get('early_stopping_last_n')):
                 print('Model did not improve for last %s steps. Early stopping.' % config.get('early_stopping_last_n'))
@@ -209,12 +197,6 @@ def train_model(model_name, config):
                     t.set_description('Iterations done: {}. Loss: {:.2f}'
                                       .format(num_iters_done, ewma(np.array(loss_history[-50:]), span=50)[-1]))
 
-                    if not config.get('validate_every_epoch') and (num_iters_done+1) % config.get('validate_every', 500) == 0:
-                        should_continue = validate()
-                        if not should_continue:
-                            should_start_next_epoch = False
-                            break
-
                     num_iters_done += 1
 
                     if config.get('max_time_seconds'):
@@ -225,14 +207,15 @@ def train_model(model_name, config):
                             should_start_next_epoch = False
                             break
 
-                epoch +=1
-
-                if config.get('validate_every_epoch') and should_start_next_epoch:
+                if epoch == config.get('validate_every_epoch') and should_start_next_epoch:
                     should_start_next_epoch = validate()
 
                 if config.get('max_epochs') and config.get('max_epochs') == epoch:
                     print('Maximum amount of epochs reached. Stopping.')
+                    should_start_next_epoch = False
                     break
+
+                epoch +=1
 
         print('Validation scores:')
         print(val_scores)
@@ -246,7 +229,6 @@ def train_model(model_name, config):
 
         if len(val_scores) == 0 or val_score >= max(val_scores):
             save_model()
-            save_optimizer_state(num_iters_done+1)
 
 
 def main():
@@ -255,22 +237,22 @@ def main():
     parser.add_argument('model')
 
     parser.add_argument('--data_path')
-    parser.add_argument('--optimizer_state_path')
-    parser.add_argument('--inp_embeddings_path')
-    parser.add_argument('--out_embeddings_path')
     parser.add_argument('--target_lm_path')
     parser.add_argument('--src_lm_path')
     parser.add_argument('--pretrained_model_path')
     parser.add_argument('--hp_file_path')
-    parser.add_argument('--validate_every', type=int)
     parser.add_argument('--use_early_stopping', type=bool)
     parser.add_argument('--early_stopping_last_n', type=int)
     parser.add_argument('--max_epochs', type=int)
     parser.add_argument('--max_time_seconds', type=int)
     parser.add_argument('--batch_size_for_inference', type=int)
     parser.add_argument('--max_len', type=int)
-    parser.add_argument('--validate_every_epoch', type=bool)
+    parser.add_argument('--validate_every_epoch', type=int)
     parser.add_argument('--warm_up_num_epochs', type=int)
+    parser.add_argument('--max_num_models', type=int)
+
+    # Our ensemble will not be good if we save models every 2 minutes (~every epoch)
+    parser.add_argument('--min_num_epochs_between_model_saves', type=int)
 
     parser.add_argument('--gpu_memory_fraction', type=float)
 
@@ -280,6 +262,7 @@ def main():
     config = dict(filter(lambda x: x[1], config.items())) # Getting rid of None vals
 
     print('Traning the %s' % args.model)
+    print('Config:', config)
     train_model(args.model, config)
 
 
