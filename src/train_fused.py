@@ -141,8 +141,14 @@ def train_model(model_name, config):
         should_start_next_epoch = True # We need this var to break outer loop
 
         global num_model_saves_counter; num_model_saves_counter = 0
+        global last_save_epoch = -config.get('min_interval_between_saves')
         def save_model():
-            global num_model_saves_counter
+            global num_model_saves_counter, last_save_epoch
+
+            if epoch - config.get('min_interval_between_saves') < last_save_epoch:
+                print('Do not save the model, because not enough epochs passed')
+                return
+
             save_path = '{}/model_{}.npz'.format(model_path, num_model_saves_counter % max_num_models)
             print('Saving the model into %s' %save_path)
 
@@ -151,6 +157,7 @@ def train_model(model_name, config):
             np.savez(save_path, **weights_dict)
 
             num_model_saves_counter += 1
+            last_save_epoch = epoch
 
         def validate():
             """
@@ -250,6 +257,7 @@ def main():
     parser.add_argument('--validate_every_epoch', type=int)
     parser.add_argument('--warm_up_num_epochs', type=int)
     parser.add_argument('--max_num_models', type=int)
+    parser.add_argument('--min_interval_between_saves', type=int)
 
     # Our ensemble will not be good if we save models every 2 minutes (~every epoch)
     parser.add_argument('--min_num_epochs_between_model_saves', type=int)

@@ -69,21 +69,23 @@ MAX_EPOCHS=1000
 USE_EARLY_STOPPING=False # TODO: CHANGE IT WHEN FINISH!
 EARLY_STOPPING_LAST_N=10
 MAX_NUM_MODELS=4
+MIN_INTERVAL_BETWEEN_SAVES=5
 GPU_MEMORY_FRACTION=0.1
 
-# PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
-#             --data_path="$DATA_PATH" \
-#             --hp_file_path="$HP_FILE_PATH" \
-#             --max_time_seconds="$MAX_TIME_SECONDS" \
-#             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
-#             --use_early_stopping="$USE_EARLY_STOPPING" \
-#             --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
-#             --max_epochs="$MAX_EPOCHS" \
-#             --validate_every_epoch="$VALIDATE_EVERY_EPOCH" \
-#             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
-#             --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz" \
-#             --max_num_models="$MAX_NUM_MODELS" \
-#             --gpu_memory_fraction="$GPU_MEMORY_FRACTION"
+PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
+            --data_path="$DATA_PATH" \
+            --hp_file_path="$HP_FILE_PATH" \
+            --max_time_seconds="$MAX_TIME_SECONDS" \
+            --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
+            --use_early_stopping="$USE_EARLY_STOPPING" \
+            --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
+            --max_epochs="$MAX_EPOCHS" \
+            --validate_every_epoch="$VALIDATE_EVERY_EPOCH" \
+            --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
+            --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz" \
+            --max_num_models="$MAX_NUM_MODELS" \
+            --gpu_memory_fraction="$GPU_MEMORY_FRACTION" \
+            --min_interval_between_saves="$MIN_INTERVAL_BETWEEN_SAVES"
 
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME" \
