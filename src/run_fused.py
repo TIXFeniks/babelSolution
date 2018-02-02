@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import argparse
 
 import numpy as np
@@ -78,6 +79,7 @@ def run_model(model_name, config):
                 # deprocess = True gets rid of BOS and EOS
                 trans = out_voc.detokenize_many(trans_ix, unbpe=True, deprocess=True)
 
+                if random.random() < 0.5: raise(Exception('Excpetion 1'))
             except Exception as e:
                 print('Ahtung! Batch is failed:', e)
                 # we failed this batch. At least one sample is broken
@@ -94,6 +96,8 @@ def run_model(model_name, config):
                         row_trans = out_voc.detokenize_many(row_trans_ix,
                                                             unbpe=True, deprocess=True)  # [1]
                         trans.append(row_trans[0])
+
+                        if random.random() < 0.1: raise(Exception('Excpetion 1'))
                     except Exception as e:
                         print('Ahtung! We could not even translate a sample:', e)
                         # we failed this very row. Use src as fallback
