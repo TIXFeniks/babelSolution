@@ -78,7 +78,8 @@ def run_model(model_name, config):
                 # deprocess = True gets rid of BOS and EOS
                 trans = out_voc.detokenize_many(trans_ix, unbpe=True, deprocess=True)
 
-            except:
+            except Exception as e:
+                print('Ahtung! Batch is failed:', e)
                 # we failed this batch. At least one sample is broken
                 trans = []
                 src_rows = batch[0]
@@ -93,7 +94,8 @@ def run_model(model_name, config):
                         row_trans = out_voc.detokenize_many(row_trans_ix,
                                                             unbpe=True, deprocess=True)  # [1]
                         trans.append(row_trans[0])
-                    except:
+                    except Exception as e:
+                        print('Ahtung! We could not even translate a sample:', e)
                         # we failed this very row. Use src as fallback
                         trans.append(str(row).replace('\n', ''))  # cast to str just in case
 
@@ -104,7 +106,8 @@ def run_model(model_name, config):
         try:
             with open(output_path, 'wb') as output_file:
                 output_file.write('\n'.join(translations).encode('utf-8'))
-        except:
+        except Exception as e:
+            print('Failed conversion:', e)
             # we failed at conversion somewhere. Write one row at a time
             with open(output_path, 'w') as output_file:
                 for translation in translations:
