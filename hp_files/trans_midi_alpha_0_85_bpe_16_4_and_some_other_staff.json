@@ -1,0 +1,17 @@
+{
+    "hid_size": 512,
+    "ff_size": 2048,
+    "num_heads": 4,
+    "num_layers": 8,
+    "rescale_emb": true,
+    "relu_dropout": 0.3,
+    "res_dropout": 0.3,
+    "attn_dropout": 0.3,
+    "inp_emb_bias": true,
+    "res_steps": "nlda",
+    "normalize_out": true,
+    "force_bos": true,
+    "batch_size": 32,
+    "beam_size": 6,
+    "len_alpha": 0.85
+}

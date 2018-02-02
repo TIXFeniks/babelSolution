@@ -6,7 +6,7 @@ OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="/nmt"
 
 
-HP_FILE_PATH="$PROJECT_DIR/hp_files/transformer_midi.json"
+HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_midi_alpha_0_85_bpe_16_4_and_some_other_staff.json"
 
 
 
@@ -22,7 +22,7 @@ mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 cd "$PROJECT_DIR"
 
 # Preparing data
-$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
+$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 16000 4000
 
 ###
 # Running first LM model (for source lang)
@@ -65,11 +65,12 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
 
 MODEL_NAME="transformer"
 BATCH_SIZE_FOR_INFERENCE=32
-MAX_TIME_SECONDS=3600
+MAX_TIME_SECONDS=14400
 SHOULD_VALIDATE_EVERY_EPOCH=True
 MAX_EPOCHS=1000
 USE_EARLY_STOPPING=True
-EARLY_STOPPING_LAST_N=5
+EARLY_STOPPING_LAST_N=30
+WARM_UP_NUM_EPOCHS=15
 
 # Training the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
@@ -82,7 +83,8 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NA
             --max_epochs="$MAX_EPOCHS" \
             --validate_every_epoch="$SHOULD_VALIDATE_EVERY_EPOCH" \
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
-            --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz"
+            --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz" \
+            --warm_up_num_epochs="$WARM_UP_NUM_EPOCHS"
 
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME" \
