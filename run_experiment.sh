@@ -9,7 +9,7 @@ git checkout "$EXPERIMENT_NAME"
 
 # Running experiment
 # 1. Build docker image
-sudo nvidia-docker build -t "universome/$EXPERIMENT_NAME" .
+sudo nvidia-docker build -t "donotstealsubs/$EXPERIMENT_NAME" .
 
 # 2. OPTIONAL: Testing locally on small data
 # 2.1. Creating output dir
@@ -18,13 +18,13 @@ rm -rf "$OUTPUT_DIR" # Cleaning directory
 mkdir "$OUTPUT_DIR"
 
 # 2.2 Running experiment locally on small data
-sudo nvidia-docker run -v /home/user32878/data/test_data2/:/data -v "$OUTPUT_DIR":/output -it "universome/$EXPERIMENT_NAME" /nmt/run_lm_fused.sh
+sudo nvidia-docker run -v /home/user32878/data/test_data2/:/data -v "$OUTPUT_DIR":/output -it "donotstealsubs/$EXPERIMENT_NAME" /nmt/run_lm_fused.sh
 
 # 3. Pushing to docker hub
-sudo docker push "universome/$EXPERIMENT_NAME"
+sudo docker push "donotstealsubs/$EXPERIMENT_NAME"
 
 # Let's cat metadata.json which can be copypasted
-METADATA="{\"image\": \"universome/$EXPERIMENT_NAME\", \"entry_point\": \"/nmt/run_lm_fused.sh\"}"
+METADATA="{\"image\": \"donotstealsubs/$EXPERIMENT_NAME\", \"entry_point\": \"/nmt/run_lm_fused.sh\"}"
 echo $METADATA
 
 cd ..
@@ -35,6 +35,6 @@ rm -rf "$EXPERIMENT_NAME"
 
 # Metadata json should look like this
 # {
-#     "image": "universome/"$EXPERIMENT_NAME"",
+#     "image": "donotstealsubs/"$EXPERIMENT_NAME"",
 #     "entry_point": "/nmt/run_lm_fused.sh"
 # }
