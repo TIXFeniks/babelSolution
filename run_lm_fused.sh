@@ -11,7 +11,7 @@ PROJECT_DIR="/nmt"
 #INPUT_DATA_PATH="data"
 #OUTPUT_DATA_PATH="data"
 
-HP_FILE_PATH="$PROJECT_DIR/hp_files/lm_fitted.json"
+HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_09.json"
 
 mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 
@@ -19,7 +19,7 @@ mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 cd "$PROJECT_DIR"
 
 # Preparing data
-$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
+$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 8000 8000
 
 python3.6 check_tokenization.py "$DATA_PATH/bpe_input.txt" "$INPUT_DATA_PATH/input.txt"
 
@@ -71,7 +71,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
 MODEL_NAME="transformer"
 BATCH_SIZE_FOR_INFERENCE=32
 
-MAX_TIME_SECONDS=14400
+MAX_TIME_SECONDS=14100
 
 SHOULD_VALIDATE_EVERY_EPOCH=True
 MAX_EPOCHS=1000
