@@ -13,9 +13,40 @@ from pandas import ewma
 from vocab import Vocab
 from src.training_utils import *
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, all_shapes_equal
+from random import choice
 
 from models.transformer_fused import Model
 from models.transformer_lm import TransformerLM
+
+
+
+def init_with_lms(model, weights, target_lm_path, src_lm_path, session):
+    assigns = []
+    # init model with LMs
+    weights_by_common_name = {w.name[len(model.name) + 1:]: w for w in weights}
+    with np.load(target_lm_path) as dic:
+        for key in dic:  # decoder_init
+            w_lm = dic[key]
+            weights_key = '/'.join(key.split('/')[1:]).replace('main/', '').replace("enc", 'dec').replace("inp", "out")
+            if "emb_out_bias" in weights_key:  # no such thing
+                continue
+
+            w_var = weights_by_common_name[weights_key]
+
+            all_shapes_equal(w_lm, w_var, session=session, mode='assert')
+
+            assigns.append(tf.assign(w_var, w_lm))
+    with np.load(src_lm_path) as dic:
+        for key in dic:  # encoder_init
+            w_lm = dic[key]
+            weights_key = '/'.join(key.split('/')[1:]).replace('main/', '')
+            if "logits" in weights_key:  # encoder has no 'logits' layer for the logits to be initialised
+                continue
+            w_var = weights_by_common_name[weights_key]
+
+            all_shapes_equal(w_lm, w_var, session=session, mode='assert')
+            assigns.append(tf.assign(w_var, w_lm))
+    session.run(assigns)
 
 
 def train_model(model_name, config):
@@ -29,11 +60,16 @@ def train_model(model_name, config):
     dst_train_path = '{}/bpe_parallel_train2.txt'.format(config.get('data_path'))
     src_val_path = '{}/bpe_parallel_val1.txt'.format(config.get('data_path'))
     dst_val_path = '{}/bpe_parallel_val2.txt'.format(config.get('data_path'))
+    src_unlabeled_path = '{}/bpe_corpus1.txt'.format(config.get('data_path'))
+    dst_unlabeled_path = '{}/bpe_corpus2.txt'.format(config.get('data_path'))
 
     src_train = open(src_train_path, 'r', encoding='utf-8').read().splitlines()
     dst_train = open(dst_train_path, 'r', encoding='utf-8').read().splitlines()
     src_val = open(src_val_path, 'r', encoding='utf-8').read().splitlines()
     dst_val = open(dst_val_path, 'r', encoding='utf-8').read().splitlines()
+
+    src_unlabeled = open(src_val_path, 'r', encoding='utf-8').read().splitlines()
+    dst_unlabeled = open(dst_val_path, 'r', encoding='utf-8').read().splitlines()
 
     inp_voc = Vocab.from_file('{}/1.voc'.format(config.get('data_path')))
     out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
@@ -62,9 +98,27 @@ def train_model(model_name, config):
             raise ValueError("Must specify LM path!")
         model = Model(model_name, inp_voc, out_voc, lm, **hp)
 
+        lm_bk = TransformerLM('lm1', inp_voc, **hp)
+        if config.get('src_lm_path'):
+            lm_weights = np.load(config.get('src_lm_path'))
+            ops = []
+            for w in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, lm_bk.name):
+                if w.name in lm_weights:
+                    ops.append(tf.assign(w, lm_weights[w.name]))
+                else:
+                    print(w.name, 'not initialized')
+
+            sess.run(ops);
+        else:
+            raise ValueError("Must specify src LM path!")
+
+        model_bk = Model(model_name + "bk", out_voc, inp_voc, lm_bk, **hp)
+
+        optimizer = create_optimizer(hp)
+
         inp = tf.placeholder(tf.int32, [None, None])
         out = tf.placeholder(tf.int32, [None, None])
-        logprobs = model.symbolic_score(inp, out, is_train=True)[:,:tf.shape(out)[1]]
+        logprobs = model.symbolic_score(inp, out, is_train=True)[:, :tf.shape(out)[1]]
 
         nll = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logprobs, labels=out)
         loss = nll * infer_mask(out, out_voc.eos, dtype=tf.float32)
@@ -72,17 +126,38 @@ def train_model(model_name, config):
         loss = tf.reduce_mean(loss)
 
         weights = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, model_name)
-
-        all_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
-        non_trainable_vars = list(set(all_vars).difference(set(weights)))
-
+        """
+        print("forward weights: =================================")
+        print(list(map(lambda w: w.name, weights)))
+        print("==================================================")
+        """
         grads = tf.gradients(loss, weights)
         grads = tf.clip_by_global_norm(grads, 100)[0]
-        optimizer = create_optimizer(hp)
         train_step = optimizer.apply_gradients(zip(grads, weights))
 
+
+        logprobs_bk = model_bk.symbolic_score(out, inp, is_train=True)[:, :tf.shape(inp)[1]]
+
+        nll_bk = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logprobs_bk, labels=inp)
+        loss_bk = nll_bk * infer_mask(inp, inp_voc.eos, dtype=tf.float32)
+        loss_bk = tf.reduce_sum(loss_bk, axis=1)
+        loss_bk = tf.reduce_mean(loss_bk)
+
+        weights_bk = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, model_name + 'bk')
+        """
+        print("forward weights: =================================")
+        print(list(map(lambda w: w.name, weights_bk)))
+        print("==================================================")
+        """
+        grads_bk = tf.gradients(loss_bk, weights_bk)
+        grads_bk = tf.clip_by_global_norm(grads_bk, 100)[0]
+        train_step_bk = optimizer.apply_gradients(zip(grads_bk, weights_bk))
+
+        all_vars = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, )
+        non_trainable_vars = list(set(all_vars).difference(set(weights + weights_bk)))
+
         # Loading pretrained model
-        if config.get('pretrained_model_path'):
+        if config.get('pretrained_model_path'):  # TODO: same for bk
             w_values = np.load(config.get('pretrained_model_path'))
 
             curr_var_names = set(w.name for w in weights)
@@ -94,10 +169,10 @@ def train_model(model_name, config):
             sess.run(assigns)
 
         if config.get('optimizer_state_path'):
-            pass # TODO(universome): load optimizer state
+            pass  # TODO(universome): load optimizer state
 
         # TODO(universome): embeddings will be in a different format
-        if config.get('inp_embeddings_path'):
+        if config.get('inp_embeddings_path'):  # TODO: same for bk
             embeddings = np.load(config.get('inp_embeddings_path'))['arr_0'].astype(np.float32)
             sess.run(tf.assign(model.emb_inp.trainable_weights[0], tf.constant(embeddings)))
 
@@ -107,83 +182,57 @@ def train_model(model_name, config):
 
         initialize_uninitialized_variables(sess)
 
-        assigns = []
-        weights_by_common_name = {w.name[len(model_name)+1:]: w for w in weights}
-        if config.get('target_lm_path'):
-            with np.load(config.get('target_lm_path')) as dic:
-                for key in dic: # decoder_init
-                    print(key)
-                    w_lm = dic[key]
-                    weights_key = '/'.join(key.split('/')[1:]).replace('main/','').replace("enc",'dec').replace("inp","out")
-                    if "emb_out_bias" in weights_key: # no such thing
-                        continue
-
-                    w_var = weights_by_common_name[weights_key]
-
-                    all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
-
-                    assigns.append(tf.assign(w_var,w_lm))
+        # init with LMs
+        if config.get('target_lm_path') and config.get('src_lm_path'):
+            init_with_lms(model, weights, config.get('target_lm_path'), config.get('src_lm_path'), sess)
+            init_with_lms(model_bk, weights_bk, config.get('src_lm_path'), config.get('target_lm_path'), sess)
         else:
             raise ValueError("Must specify LM path!")
-        if config.get('src_lm_path'):
-            with np.load(config.get("src_lm_path")) as dic:
-                for key in dic: # encoder_init
-                    w_lm = dic[key]
-                    print(key)
-                    weights_key = '/'.join(key.split('/')[1:]).replace('main/','')
-                    if "logits" in weights_key: # encoder has no 'logits' layer for the logits to be initialised
-                        continue
-                    w_var = weights_by_common_name[weights_key]
-
-                    all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
-                    assigns.append(tf.assign(w_var,w_lm))
-        else:
-            raise ValueError("Must specify LM path!")
-        sess.run(assigns)
 
         batch_size = hp.get('batch_size', 32)
         epoch = 0
         training_start_time = time()
         loss_history = []
-        val_scores = []
+        loss_history_bk = []
+        val_scores = []  # TODO: same for BK
 
         num_iters_done = 0
-        should_start_next_epoch = True # We need this var to break outer loop
+        should_start_next_epoch = True  # We need this var to break outer loop
 
-        def save_model():
+        def save_model():  # TODO: add bk
             save_path = '{}/model.npz'.format(model_path)
-            print('Saving the model into %s' %save_path)
+            print('Saving the model into %s' % save_path)
 
             w_values = sess.run(weights)
             weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
             np.savez(save_path, **weights_dict)
 
-        def save_optimizer_state(num_iters_done):
+        def save_optimizer_state(num_iters_done):  # init for bk
             # TODO(universome): Do we need iterations in optimizer state?
             state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
             np.savez('{}/{}.iter-{}.npz'.format(model_path, 'optimizer_state', num_iters_done), **state_dict)
 
-        def validate():
+        def validate():  # TODO: for bk
             """
             Returns should_continue flag, which tells us if we should continue or early stop
             """
             should_continue = True
 
             if config.get('warm_up_num_epochs') and config.get('warm_up_num_epochs') > epoch:
-                print('Skipping validation, becaused is not warmed up yet')
+                print('Skipping validation, because is not warmed up yet')
                 return should_continue
 
             print('Validating')
             val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
-                                                model_name, config, max_len=max_len)
+                                               model_name, config, max_len=max_len)
             val_scores.append(val_score)
             print('Validation BLEU: {:0.3f}'.format(val_score))
 
             # Save model if this is our best model
-            if np.argmax(val_scores) == len(val_scores)-1:
+            if np.argmax(val_scores) == len(val_scores) - 1:
                 print('Saving model because it has the highest validation BLEU.')
                 save_model()
-                save_optimizer_state(num_iters_done+1)
+                save_optimizer_state(num_iters_done + 1)
 
             if config.get('use_early_stopping') and should_stop_early(val_scores, config.get('early_stopping_last_n')):
                 print('Model did not improve for last %s steps. Early stopping.' % config.get('early_stopping_last_n'))
@@ -191,6 +240,8 @@ def train_model(model_name, config):
 
             return should_continue
 
+        syntethic_src_dst = []
+        syntethic_dst_src = []
         while should_start_next_epoch:
             batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
             with tqdm(batches) as t:
@@ -202,37 +253,81 @@ def train_model(model_name, config):
                     batch_dst_ix = out_voc.tokenize_many(batch_dst)[:, :max_len]
 
                     feed_dict = {inp: batch_src_ix, out: batch_dst_ix}
+                    _, loss_t, _, loss_t_bk = sess.run([train_step, loss, train_step_bk, loss_bk], feed_dict)
 
-                    loss_t = sess.run([train_step, loss], feed_dict)[1]
                     loss_history.append(np.mean(loss_t))
+                    loss_history_bk.append(np.mean(loss_t_bk))
 
-                    t.set_description('Iterations done: {}. Loss: {:.2f}'
-                                      .format(num_iters_done, ewma(np.array(loss_history[-50:]), span=50)[-1]))
+                    if len(syntethic_src_dst) > 0:
+                        # src -> dst back trans results
+                        syntethic_src_dst_batch = [choice(range(len(syntethic_src_dst)))
+                                                   for i in range(batch_size // 10 + 1)]
 
-                    if not config.get('validate_every_epoch') and (num_iters_done+1) % config.get('validate_every', 500) == 0:
+                        batch_src = [syntethic_src_dst[i][0] for i in syntethic_src_dst_batch]
+                        batch_dst = [syntethic_src_dst[i][1] for i in syntethic_src_dst_batch]
+
+                        batch_src_ix = inp_voc.tokenize_many(batch_src)[:, :max_len]
+                        batch_dst_ix = out_voc.tokenize_many(batch_dst)[:, :max_len]
+
+                        feed_dict = {inp: batch_src_ix, out: batch_dst_ix}
+                        _, loss_t_bk = sess.run([train_step_bk, loss_bk], feed_dict)
+
+                    if len(syntethic_dst_src) > 0:
+                        # src <- dst back trans results
+                        syntethic_dst_src_batch = [choice(range(len(syntethic_dst_src)))
+                                                   for i in range(batch_size // 10 + 1)]
+
+                        batch_src = [syntethic_dst_src[i][1] for i in syntethic_src_dst_batch]
+                        batch_dst = [syntethic_dst_src[i][0] for i in syntethic_src_dst_batch]
+
+                        batch_src_ix = inp_voc.tokenize_many(batch_src)[:, :max_len]
+                        batch_dst_ix = out_voc.tokenize_many(batch_dst)[:, :max_len]
+
+                        feed_dict = {inp: batch_src_ix, out: batch_dst_ix}
+                        _, loss_t = sess.run([train_step, loss], feed_dict)
+
+
+
+
+                    t.set_description('I:{}. Loss:{:.2f}. BackLoss:{:.2f}:'
+                                      .format(num_iters_done, ewma(np.array(loss_history[-50:]), span=50)[-1],
+                                              ewma(np.array(loss_history_bk[-50:]), span=50)[-1]))
+
+                    if not config.get('validate_every_epoch') and (num_iters_done + 1) % config.get('validate_every',
+                                                                                                    500) == 0:
                         should_continue = validate()
                         if not should_continue:
                             should_start_next_epoch = False
                             break
 
                     num_iters_done += 1
-
                     if config.get('max_time_seconds'):
-                        seconds_elapsed = time()-training_start_time
+                        seconds_elapsed = time() - training_start_time
 
                         if seconds_elapsed > config.get('max_time_seconds'):
-                            print('Maximum allowed training time reached. Training took %s. Stopping.' % seconds_elapsed)
+                            print(
+                                'Maximum allowed training time reached. Training took %s. Stopping.' % seconds_elapsed)
                             should_start_next_epoch = False
                             break
 
-                epoch +=1
+            epoch += 1
 
-                if config.get('validate_every_epoch') and should_start_next_epoch:
-                    should_start_next_epoch = validate()
+            if config.get('validate_every_epoch') and should_start_next_epoch:
+                should_start_next_epoch = validate()
 
-                if config.get('max_epochs') and config.get('max_epochs') == epoch:
-                    print('Maximum amount of epochs reached. Stopping.')
-                    break
+            if config.get('max_epochs') and config.get('max_epochs') == epoch:
+                print('Maximum amount of epochs reached. Stopping.')
+                break
+
+            src_to_trans = [choice(src_unlabeled) for i in range(config.get('synthetic_per_epoch', 100))]
+            dst_to_trans = [choice(dst_unlabeled) for i in range(config.get('synthetic_per_epoch', 100))]
+            syntethic_src_dst += zip(src_to_trans, translate_sents(model, sess, inp_voc, out_voc,
+                                                                   src_to_trans, model_name, config))
+            syntethic_dst_src += zip(dst_to_trans, translate_sents(model_bk, sess, out_voc, inp_voc,
+                                                                   dst_to_trans, model_name + 'bk', config))
+
+            syntethic_dst_src = syntethic_dst_src[-2000:]
+            syntethic_src_dst = syntethic_src_dst[-2000:]
 
         print('Validation scores:')
         print(val_scores)
@@ -246,7 +341,7 @@ def train_model(model_name, config):
 
         if len(val_scores) == 0 or val_score >= max(val_scores):
             save_model()
-            save_optimizer_state(num_iters_done+1)
+            save_optimizer_state(num_iters_done + 1)
 
 
 def main():
@@ -263,6 +358,7 @@ def main():
     parser.add_argument('--pretrained_model_path')
     parser.add_argument('--hp_file_path')
     parser.add_argument('--validate_every', type=int)
+    parser.add_argument('--synthetic_per_epoch', type=int)
     parser.add_argument('--use_early_stopping', type=bool)
     parser.add_argument('--early_stopping_last_n', type=int)
     parser.add_argument('--max_epochs', type=int)
@@ -277,7 +373,7 @@ def main():
     args = parser.parse_args()
 
     config = vars(args)
-    config = dict(filter(lambda x: x[1], config.items())) # Getting rid of None vals
+    config = dict(filter(lambda x: x[1], config.items()))  # Getting rid of None vals
 
     print('Traning the %s' % args.model)
     train_model(args.model, config)

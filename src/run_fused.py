@@ -53,9 +53,9 @@ def run_model(model_name, config):
         # Loading model state
         w_values = np.load(config.get('model_path'))
         curr_var_names = set(w.name for w in weights)
-        var_names_in_file = set(w_values.keys())
+        #var_names_in_file = set(w_values.keys())  # I AM A FIX
 
-        assert curr_var_names == var_names_in_file
+        #assert curr_var_names == var_names_in_file
 
         assigns = [tf.assign(var, tf.constant(w_values[var.name])) for var in weights]
         sess.run(assigns)

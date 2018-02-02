@@ -41,32 +41,35 @@ def batch_generator_over_dataset(src, dst, batch_size=16, batches_per_epoch=None
         yield (batch_src, batch_dst)
 
 
-def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config, max_len=200):
+def translate_sents(model, sess, inp_voc, out_voc, src_val, model_name, config, max_len=200):
     src_val_ix = inp_voc.tokenize_many(src_val)
 
     inp = tf.placeholder(tf.int32, [None, None])
     translations = []
 
     if model_name == 'gnmt':
-        sy_translations = model.symbolic_translate(inp, greedy=True)[0]
-    elif model_name == 'transformer':
-        sy_translations = model.symbolic_translate(inp, mode='greedy', max_len=max_len,
-                                                   back_prop=False, swap_memory=True).best_out
-    else:
-        raise NotImplemented("Unknown model")
+        raise NotImplemented("deprecated model")
+    sy_translations = model.symbolic_translate(inp, mode='greedy', max_len=max_len,
+                                               back_prop=False, swap_memory=True).best_out
 
     for batch in iterate_minibatches(src_val_ix, batchsize=config.get('batch_size_for_inference', 64)):
 
         translations += sess.run([sy_translations], feed_dict={inp: batch[0][:, :max_len]})[0].tolist()
 
     outputs = out_voc.detokenize_many(translations, unbpe=True, deprocess=True)
-    outputs = [out.split() for out in outputs]
+
+    return outputs
+
+
+def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, model_name, config, max_len=200):
+
+    outputs = translate_sents(model,sess,inp_voc, out_voc, src_val, model_name, config, max_len)
 
     targets = out_voc.remove_bpe_many(dst_val)
     targets = [[t.split()] for t in targets]
 
+    outputs = [out.split() for out in outputs]
     bleu = compute_bleu(targets, outputs)[0]
-
     return bleu
 
 

@@ -5,16 +5,13 @@ INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="/nmt"
 
-
-HP_FILE_PATH="$PROJECT_DIR/hp_files/transformer_midi.json"
-
-
-
 # Let's keep here pathes for local testing and comment them out
-# PROJECT_DIR="."
-# DATA_PATH="data"
-# INPUT_DATA_PATH="data"
-# OUTPUT_DATA_PATH="data"
+PROJECT_DIR="."
+DATA_PATH="data"
+INPUT_DATA_PATH="data"
+OUTPUT_DATA_PATH="data"
+
+HP_FILE_PATH="$PROJECT_DIR/hp_files/lm_fitted.json"
 
 mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 
@@ -22,7 +19,7 @@ mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 cd "$PROJECT_DIR"
 
 # Preparing data
-$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
+#$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
 
 ###
 # Running first LM model (for source lang)
@@ -34,29 +31,29 @@ MAX_TIME_SECONDS=3600
 MAX_EPOCHS=100
 
 # Running the model
-PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
-            --data_path="$DATA_PATH" \
-            --hp_file_path="$HP_FILE_PATH" \
-            --lang="$LANG" \
-            --max_epochs=$MAX_EPOCHS \
-            --max_time_seconds=$MAX_TIME_SECONDS
+#PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
+#            --data_path="$DATA_PATH" \
+#            --hp_file_path="$HP_FILE_PATH" \
+#            --lang="$LANG" \
+#            --max_epochs=$MAX_EPOCHS \
+#            --max_time_seconds=$MAX_TIME_SECONDS
 
 ###
 # Running second LM model (for target lang)
 ###
 
-LANG=2
-MODEL_NAME="lm$LANG"
-MAX_TIME_SECONDS=3600
-MAX_EPOCHS=100
-
-# Running the model
-PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
-            --data_path="$DATA_PATH" \
-            --hp_file_path="$HP_FILE_PATH" \
-            --lang="$LANG" \
-            --max_epochs=$MAX_EPOCHS \
-            --max_time_seconds=$MAX_TIME_SECONDS
+#LANG=2
+#MODEL_NAME="lm$LANG"
+#MAX_TIME_SECONDS=3600
+#MAX_EPOCHS=100
+#
+## Running the model
+#PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
+#            --data_path="$DATA_PATH" \
+#            --hp_file_path="$HP_FILE_PATH" \
+#            --lang="$LANG" \
+#            --max_epochs=$MAX_EPOCHS \
+#            --max_time_seconds=$MAX_TIME_SECONDS
 
 
 ###########
@@ -72,17 +69,17 @@ USE_EARLY_STOPPING=True
 EARLY_STOPPING_LAST_N=5
 
 # Training the model
-PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
-            --data_path="$DATA_PATH" \
-            --hp_file_path="$HP_FILE_PATH" \
-            --max_time_seconds="$MAX_TIME_SECONDS" \
-            --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
-            --use_early_stopping="$USE_EARLY_STOPPING" \
-            --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
-            --max_epochs="$MAX_EPOCHS" \
-            --validate_every_epoch="$SHOULD_VALIDATE_EVERY_EPOCH" \
-            --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
-            --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz"
+#PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
+#            --data_path="$DATA_PATH" \
+#            --hp_file_path="$HP_FILE_PATH" \
+#            --max_time_seconds="$MAX_TIME_SECONDS" \
+#            --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
+#            --use_early_stopping="$USE_EARLY_STOPPING" \
+#            --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
+#            --max_epochs="$MAX_EPOCHS" \
+#            --validate_every_epoch="$SHOULD_VALIDATE_EVERY_EPOCH" \
+#            --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
+#            --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz"
 
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME" \
