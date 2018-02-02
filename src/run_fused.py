@@ -66,7 +66,7 @@ def run_model(model_name, config):
         inp = tf.placeholder(tf.int32, [None, None])
 
         assert model_name != 'gnmt', 'gnmt no longer supported'
-        sy_translations = model.symbolic_translate(inp, back_prop=False, swap_memory=True).best_out
+        sy_translations = model.symbolic_translate(inp, back_prop=False, swap_memory=True, is_train=False).best_out
 
         translations = []
 

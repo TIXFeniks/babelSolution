@@ -50,7 +50,7 @@ def compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val, mode
     if model_name == 'gnmt':
         sy_translations = model.symbolic_translate(inp, greedy=True)[0]
     elif model_name == 'transformer':
-        sy_translations = model.symbolic_translate(inp, mode='greedy', max_len=max_len,
+        sy_translations = model.symbolic_translate(inp, mode='greedy', max_len=max_len, is_train=False,
                                                    back_prop=False, swap_memory=True).best_out
     else:
         raise NotImplemented("Unknown model")
