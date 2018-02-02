@@ -22,7 +22,7 @@ mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 cd "$PROJECT_DIR"
 
 # Preparing data
-$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH"
+$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 16000 4000
 
 ###
 # Running first LM model (for source lang)
