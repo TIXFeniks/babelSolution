@@ -141,7 +141,7 @@ def train_model(model_name, config):
         should_start_next_epoch = True # We need this var to break outer loop
 
         global num_model_saves_counter; num_model_saves_counter = 0
-        global last_save_epoch = -config.get('min_interval_between_saves')
+        global last_save_epoch; last_save_epoch = -config.get('min_interval_between_saves')
         def save_model():
             global num_model_saves_counter, last_save_epoch
 
@@ -168,6 +168,8 @@ def train_model(model_name, config):
             if config.get('warm_up_num_epochs') and config.get('warm_up_num_epochs') > epoch:
                 print('Skipping validation, becaused is not warmed up yet')
                 return should_continue
+            else:
+                print('Cool, I will validate, because warm_up_num_epochs is not set')
 
             print('Validating')
             val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
@@ -179,10 +181,14 @@ def train_model(model_name, config):
             if np.argmax(val_scores) == len(val_scores)-1:
                 print('Saving model because it has the highest validation BLEU.')
                 save_model()
+            else:
+                print('I will not save the model because of its low val_score')
 
             if config.get('use_early_stopping') and should_stop_early(val_scores, config.get('early_stopping_last_n')):
                 print('Model did not improve for last %s steps. Early stopping.' % config.get('early_stopping_last_n'))
                 should_continue = False
+            else:
+                print('Cool, we will not stop early')
 
             return should_continue
 
@@ -214,7 +220,7 @@ def train_model(model_name, config):
                             should_start_next_epoch = False
                             break
 
-                if epoch == config.get('validate_every_epoch') and should_start_next_epoch:
+                if epoch % config.get('validate_every_epoch') == 0 and should_start_next_epoch:
                     should_start_next_epoch = validate()
 
                 if config.get('max_epochs') and config.get('max_epochs') == epoch:
