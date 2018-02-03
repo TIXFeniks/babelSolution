@@ -10,9 +10,9 @@ else
 fi
 
 if [ -z "$2" ]; then
-	inp_data=/home/anton/deephack/onsight/data
+	INPUT_DATA_PATH=/home/anton/deephack/onsight/data
 else
-	inp_data=$2
+	INPUT_DATA_PATH=$2
 fi
 
 if [ -z "$3" ]; then
@@ -43,15 +43,15 @@ mkdir $data
 threads=4
 
 echo "HOME: $home"
-echo "INP_DATA: $inp_data"
+echo "INP_DATA: $INPUT_DATA_PATH"
 echo "TOKENS: $tokens"
 echo "JOINT_DICT: $joint_dict"
 
-python3.6 $home/split_parallel.py -o $data -i $inp_data -r 0.05
+python3.6 $home/split_parallel.py -o $data -i $INPUT_DATA_PATH -r 0.05
 
-cp $inp_data/corpus1.txt $data/
-cp $inp_data/corpus2.txt $data/
-cp $inp_data/input.txt $data/
+cp $INPUT_DATA_PATH/corpus1.txt $data/
+cp $INPUT_DATA_PATH/corpus2.txt $data/
+cp $INPUT_DATA_PATH/input.txt $data/
 
 
 for lang in 1 2

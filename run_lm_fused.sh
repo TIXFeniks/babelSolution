@@ -1,20 +1,17 @@
 #!/bin/bash
 
-DATA_PATH="/nmt/data"
-INPUT_DATA_PATH="/data"
-OUTPUT_DATA_PATH="/output"
-PROJECT_DIR="/nmt"
-
+# DATA_PATH="/nmt/data"
+# INPUT_DATA_PATH="/data"
+# OUTPUT_DATA_PATH="/output"
+# PROJECT_DIR="/nmt"
 
 HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_0_9.json"
 
-
-
 # Let's keep here pathes for local testing and comment them out
-# PROJECT_DIR="."
-# DATA_PATH="data"
-# INPUT_DATA_PATH="data"
-# OUTPUT_DATA_PATH="data"
+PROJECT_DIR="."
+DATA_PATH="songs"
+INPUT_DATA_PATH="data"
+OUTPUT_DATA_PATH="data"
 
 mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 
@@ -30,7 +27,7 @@ $PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 16000 4000
 
 LANG=1
 MODEL_NAME="lm$LANG"
-MAX_TIME_SECONDS=3600
+MAX_TIME_SECONDS=180
 MAX_EPOCHS=100
 
 # Running the model
@@ -47,7 +44,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
 
 LANG=2
 MODEL_NAME="lm$LANG"
-MAX_TIME_SECONDS=3600
+MAX_TIME_SECONDS=180
 MAX_EPOCHS=100
 
 # Running the model
@@ -65,7 +62,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
 
 MODEL_NAME="transformer"
 BATCH_SIZE_FOR_INFERENCE=32
-MAX_TIME_SECONDS=10800
+MAX_TIME_SECONDS=180
 SHOULD_VALIDATE_EVERY_EPOCH=True
 MAX_EPOCHS=1000
 USE_EARLY_STOPPING=True
@@ -97,6 +94,4 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz"
 
 
-cat $DATA_PATH/output.tok.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
-
-python3.6 final_fix.py $DATA_PATH/output.tok.txt $OUTPUT_DATA_PATH/output.txt
+# cat $DATA_PATH/output.tok.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
