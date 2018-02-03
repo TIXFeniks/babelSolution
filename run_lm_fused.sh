@@ -13,8 +13,6 @@ HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_0_9.json"
 # INPUT_DATA_PATH="data_small"
 # OUTPUT_DATA_PATH="outputs"
 
-HP_FILE_PATH="$PROJECT_DIR/hp_files/mini_transformer.json"
-
 mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 
 # Preparing data
