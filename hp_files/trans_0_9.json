@@ -1,6 +1,6 @@
 {
     "hid_size": 512,
-    "ff_size": 2048,
+    "ff_size": 1024,
     "num_heads": 4,
     "num_layers": 4,
     "rescale_emb": true,
