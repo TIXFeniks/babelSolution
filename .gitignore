@@ -80,3 +80,5 @@ trained_models/
 
 # ext deps
 ext_libs/
+
+songs/
