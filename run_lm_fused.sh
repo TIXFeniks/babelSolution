@@ -1,12 +1,12 @@
 #!/bin/bash
 
-DATA_PATH="/nmt/data"
+DATA_PATH="./data"
 INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
-PROJECT_DIR="/nmt"
+PROJECT_DIR="./"
 
 
-HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_0_9.json"
+HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_tiny.json"
 
 
 
@@ -16,13 +16,13 @@ HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_0_9.json"
 # INPUT_DATA_PATH="data"
 # OUTPUT_DATA_PATH="data"
 
-mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
+#mosesdecoder=$PROJECT_DIR/ext_libs/mosesdecoder
 
 # What the hack is this?
 cd "$PROJECT_DIR"
 
 # Preparing data
-$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 16000 4000
+#$PROJECT_DIR/tokenize.sh "$PROJECT_DIR" "$INPUT_DATA_PATH" 16000 4000
 
 ###
 # Running first LM model (for source lang)
@@ -91,12 +91,12 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --data_path="$DATA_PATH" \
             --model_path="$PROJECT_DIR/trained_models/$MODEL_NAME/model.npz" \
             --input_path="$DATA_PATH/bpe_input.txt" \
-            --output_path="$DATA_PATH/output.tok.txt" \
+            --output_path="$DATA_PATH/output.txt" \
             --hp_file_path="$HP_FILE_PATH" \
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz"
 
 
-cat $DATA_PATH/output.tok.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
+##cat $DATA_PATH/output.tok.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
 
-python3.6 final_fix.py $DATA_PATH/output.tok.txt $OUTPUT_DATA_PATH/output.txt
+#python3.6 final_fix.py $DATA_PATH/output.tok.txt $OUTPUT_DATA_PATH/output.txt

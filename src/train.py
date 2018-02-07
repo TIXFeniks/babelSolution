@@ -134,6 +134,14 @@ def train_model(model_name, config):
             weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
             np.savez(save_path, **weights_dict)
 
+        def save_score(score, name):
+            save_path = '{0}/{1}.npz'.format(model_path, name)
+            print('Saving scores to %s' %save_path)
+
+            with open(save_path, 'wb'):
+                ','.join(score)
+
+
         def save_optimizer_state(num_iters_done):
             # TODO(universome): Do we need iterations in optimizer state?
             state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
@@ -223,6 +231,9 @@ def train_model(model_name, config):
         if len(val_scores) == 0 or val_score >= max(val_scores):
             save_model()
             save_optimizer_state(num_iters_done+1)
+
+        save_score(val_scores, "val_scores")
+        save_score(loss_history, "loss_history")
 
 
 def main():
