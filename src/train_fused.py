@@ -13,6 +13,7 @@ from pandas import ewma
 from vocab import Vocab
 from src.training_utils import *
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, all_shapes_equal
+from lib.utils import save_score
 
 from models.transformer_fused import Model
 from models.transformer_lm import TransformerLM
@@ -248,6 +249,8 @@ def train_model(model_name, config):
             save_model()
             save_optimizer_state(num_iters_done+1)
 
+        save_score(val_scores, model_path, "val_scores")
+        save_score(loss_history, model_path, "loss")
 
 def main():
     parser = argparse.ArgumentParser(description='Run project commands')

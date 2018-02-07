@@ -13,6 +13,7 @@ from pandas import ewma
 from vocab import Vocab
 from src.training_utils import *
 from lib.tensor_utils import infer_mask, initialize_uninitialized_variables, all_shapes_equal
+from lib.utils import save_score
 
 
 def train_model(model_name, config):
@@ -134,13 +135,6 @@ def train_model(model_name, config):
             weights_dict = {w.name: w_val for w, w_val in zip(weights, w_values)}
             np.savez(save_path, **weights_dict)
 
-        def save_score(score, name):
-            save_path = '{0}/{1}.npz'.format(model_path, name)
-            print('Saving scores to %s' %save_path)
-
-            with open(save_path, 'wb'):
-                ','.join(score)
-
 
         def save_optimizer_state(num_iters_done):
             # TODO(universome): Do we need iterations in optimizer state?
@@ -232,8 +226,8 @@ def train_model(model_name, config):
             save_model()
             save_optimizer_state(num_iters_done+1)
 
-        save_score(val_scores, "val_scores")
-        save_score(loss_history, "loss_history")
+        save_score(val_scores, model_path, "val_scores")
+        save_score(loss_history, model_path, "loss_history")
 
 
 def main():

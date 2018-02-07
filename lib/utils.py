@@ -93,3 +93,14 @@ def nested_map(fn, *t):
     # Map.
     flat = map(nested_flatten, t)
     return nested_pack(map(fn, *flat), t[0])
+
+
+def save_score(score, model_path, name):
+    save_path = '{0}/{1}.npz'.format(model_path, name)
+    print('Saving scores to %s' % save_path)
+
+    with open(save_path, 'wb'):
+        ','.join(score)
+
+
+
