@@ -25,18 +25,18 @@ def train_model(model_name, config):
     if not os.path.isdir('trained_models'): os.mkdir('trained_models')
     if not os.path.isdir(model_path): os.mkdir(model_path)
 
-    src_train_path = '{}/bpe_parallel_train1.txt'.format(config.get('data_path'))
-    dst_train_path = '{}/bpe_parallel_train2.txt'.format(config.get('data_path'))
-    src_val_path = '{}/bpe_parallel_val1.txt'.format(config.get('data_path'))
-    dst_val_path = '{}/bpe_parallel_val2.txt'.format(config.get('data_path'))
+    src_train_path = '{}/bpe_train_en.txt'.format(config.get('data_path'))
+    dst_train_path = '{}/bpe_train_fr.txt'.format(config.get('data_path'))
+    src_val_path = '{}/bpe_val_en.txt'.format(config.get('data_path'))
+    dst_val_path = '{}/bpe_val_fr.txt'.format(config.get('data_path'))
 
     src_train = open(src_train_path, 'r', encoding='utf-8').read().splitlines()
     dst_train = open(dst_train_path, 'r', encoding='utf-8').read().splitlines()
     src_val = open(src_val_path, 'r', encoding='utf-8').read().splitlines()
     dst_val = open(dst_val_path, 'r', encoding='utf-8').read().splitlines()
 
-    inp_voc = Vocab.from_file('{}/1.voc'.format(config.get('data_path')))
-    out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
+    inp_voc = Vocab.from_file('{}/en.voc'.format(config.get('data_path')))
+    out_voc = Vocab.from_file('{}/fr.voc'.format(config.get('data_path')))
     max_len = config.get('max_len', 200)
 
     # Hyperparameters
@@ -60,6 +60,7 @@ def train_model(model_name, config):
             sess.run(ops);
         else:
             raise ValueError("Must specify LM path!")
+
         model = Model(model_name, inp_voc, out_voc, lm, **hp)
 
         inp = tf.placeholder(tf.int32, [None, None])

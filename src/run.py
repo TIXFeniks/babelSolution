@@ -21,8 +21,8 @@ def run_model(model_name, config):
 
     src_data = open(input_path, 'r', encoding='utf-8').read().splitlines()
 
-    inp_voc = Vocab.from_file('{}/1.voc'.format(config.get('data_path')))
-    out_voc = Vocab.from_file('{}/2.voc'.format(config.get('data_path')))
+    inp_voc = Vocab.from_file('{}/en.voc'.format(config.get('data_path')))
+    out_voc = Vocab.from_file('{}/fr.voc'.format(config.get('data_path')))
 
     hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
     gpu_options = create_gpu_options(config)

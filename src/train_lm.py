@@ -28,7 +28,7 @@ def train_model(model_name, config):
 
     lang = config.get('lang', 2)
 
-    src_train_path = '{}/bpe_corpus{}.txt'.format(config.get('data_path'), lang)
+    src_train_path = '{}/bpe_corpus_{}.txt'.format(config.get('data_path'), lang)
 
     src_train = open(src_train_path, 'r', encoding='utf-8').read().splitlines()
 
@@ -161,7 +161,7 @@ def main():
     parser.add_argument('--max_len', type=int)
     parser.add_argument('--batch_length_variance', type=float)
     parser.add_argument('--gpu_memory_fraction', type=float)
-    parser.add_argument('--lang', type=int)
+    parser.add_argument('--lang', type=str)
 
     args = parser.parse_args()
 
