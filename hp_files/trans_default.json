@@ -13,5 +13,5 @@
     "force_bos": true,
     "batch_size": 32,
     "len_alpha": 0.9,
-    "beam_size": 6
+    "beam_size": 3
 }
