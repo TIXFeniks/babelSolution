@@ -165,15 +165,15 @@ def train_model(model_name, config):
             state_dict = {var.name: sess.run(var) for var in non_trainable_vars}
             np.savez('{}/{}.iter-{}.npz'.format(model_path, 'optimizer_state', num_iters_done), **state_dict)
 
-        def validate():
+        def validate(val_scores):
             """
             Returns should_continue flag, which tells us if we should continue or early stop
             """
             should_continue = True
 
-            if config.get('warm_up_num_epochs') and config.get('warm_up_num_epochs') > epoch:
-                print('Skipping validation, becaused is not warmed up yet')
-                return should_continue
+            # if config.get('warm_up_num_epochs') and config.get('warm_up_num_epochs') > epoch:
+            #     print('Skipping validation, becaused is not warmed up yet')
+            #     return should_continue
 
             print('Validating')
             val_score = compute_bleu_for_model(model, sess, inp_voc, out_voc, src_val, dst_val,
@@ -191,7 +191,10 @@ def train_model(model_name, config):
                 print('Model did not improve for last %s steps. Early stopping.' % config.get('early_stopping_last_n'))
                 should_continue = False
 
-            return should_continue
+            if config.get('warm_up_num_epochs') > epoch:
+                return True, val_score
+            else:
+                return should_continue, val_score
 
         while should_start_next_epoch:
             batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
@@ -212,7 +215,7 @@ def train_model(model_name, config):
                                       .format(num_iters_done, ewma(np.array(loss_history[-50:]), span=50)[-1]))
 
                     if not config.get('validate_every_epoch') and (num_iters_done+1) % config.get('validate_every', 500) == 0:
-                        should_continue = validate()
+                        should_continue = validate(val_scores)
                         if not should_continue:
                             should_start_next_epoch = False
                             break
@@ -230,7 +233,7 @@ def train_model(model_name, config):
                 epoch +=1
 
                 if config.get('validate_every_epoch') and should_start_next_epoch:
-                    should_start_next_epoch = validate()
+                    should_start_next_epoch = validate(val_scores)
 
                 if config.get('max_epochs') and config.get('max_epochs') == epoch:
                     print('Maximum amount of epochs reached. Stopping.')
