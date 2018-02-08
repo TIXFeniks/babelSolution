@@ -5,6 +5,11 @@ INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="./"
 
+if [ -z "$2" ]; then
+    TRAIN_LM=true
+else
+    TRAIN_LM=$2
+fi
 
 HP_FILE_PATH="$PROJECT_DIR/hp_files/trans_default.json"
 
@@ -27,39 +32,40 @@ cd "$PROJECT_DIR"
 ###
 # Running first LM model (for source lang)
 ###
+if [ "$TRAIN_LM" = true ]; then
+    LANG=1
+    MODEL_NAME="lm$LANG"
+    MAX_TIME_SECONDS=7200
+    MAX_EPOCHS=1
 
-LANG=1
-MODEL_NAME="lm$LANG"
-MAX_TIME_SECONDS=7200
-MAX_EPOCHS=1
+    START_TIME_LM_1=$SECONDS
+    # Running the model
+    PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
+                --data_path="$DATA_PATH" \
+                --hp_file_path="$HP_FILE_PATH" \
+                --lang="$LANG" \
+                --max_epochs=$MAX_EPOCHS \
+                --max_time_seconds=$MAX_TIME_SECONDS
+    ELAPSED_TIME_LM_1=$(($SECONDS - $START_TIME_LM_1))
 
-START_TIME_LM_1=$SECONDS
-# Running the model
-PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
-            --data_path="$DATA_PATH" \
-            --hp_file_path="$HP_FILE_PATH" \
-            --lang="$LANG" \
-            --max_epochs=$MAX_EPOCHS \
-            --max_time_seconds=$MAX_TIME_SECONDS
-ELAPSED_TIME_LM_1=$(($SECONDS - $START_TIME_LM_1))
+    ###
+    # Running second LM model (for target lang)
+    ###
 
-###
-# Running second LM model (for target lang)
-###
-
-LANG=2
-MODEL_NAME="lm$LANG"
-MAX_TIME_SECONDS=7200
-MAX_EPOCHS=1
-START_TIME_LM_2=$SECONDS
-# Running the model
-PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
-            --data_path="$DATA_PATH" \
-            --hp_file_path="$HP_FILE_PATH" \
-            --lang="$LANG" \
-            --max_epochs=$MAX_EPOCHS \
-            --max_time_seconds=$MAX_TIME_SECONDS
-ELAPSED_TIME_LM_2=$(($SECONDS - $START_TIME_LM_1))
+    LANG=2
+    MODEL_NAME="lm$LANG"
+    MAX_TIME_SECONDS=7200
+    MAX_EPOCHS=1
+    START_TIME_LM_2=$SECONDS
+    # Running the model
+    PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
+                --data_path="$DATA_PATH" \
+                --hp_file_path="$HP_FILE_PATH" \
+                --lang="$LANG" \
+                --max_epochs=$MAX_EPOCHS \
+                --max_time_seconds=$MAX_TIME_SECONDS
+    ELAPSED_TIME_LM_2=$(($SECONDS - $START_TIME_LM_1))
+fi
 
 ###########
 # Running transformer with fused LM
