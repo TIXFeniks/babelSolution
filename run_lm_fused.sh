@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATA_PATH="./data"
+DATA_PATH="/home/ubuntu/data/en-fr-small"
 INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="./"

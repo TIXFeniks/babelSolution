@@ -96,11 +96,11 @@ def nested_map(fn, *t):
 
 
 def save_score(score, model_path, name):
-    save_path = '{0}/{1}.npz'.format(model_path, name)
+    save_path = '{0}/{1}.log'.format(model_path, name)
     print('Saving scores to %s' % save_path)
 
     with open(save_path, 'wb'):
-        ','.join(score)
+        ','.join([str(x) for x in score])
 
 
 
