@@ -33,6 +33,7 @@ MODEL_NAME="lm$LANG"
 MAX_TIME_SECONDS=7200
 MAX_EPOCHS=2
 
+START_TIME_LM_1=$SECONDS
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
             --data_path="$DATA_PATH" \
@@ -40,6 +41,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
             --lang="$LANG" \
             --max_epochs=$MAX_EPOCHS \
             --max_time_seconds=$MAX_TIME_SECONDS
+ELAPSED_TIME_LM_1=$(($SECONDS - $START_TIME_LM_1))
 
 ###
 # Running second LM model (for target lang)
@@ -49,7 +51,7 @@ LANG=2
 MODEL_NAME="lm$LANG"
 MAX_TIME_SECONDS=7200
 MAX_EPOCHS=2
-
+START_TIME_LM_2=$SECONDS
 # Running the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
             --data_path="$DATA_PATH" \
@@ -57,7 +59,7 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME"
             --lang="$LANG" \
             --max_epochs=$MAX_EPOCHS \
             --max_time_seconds=$MAX_TIME_SECONDS
-
+ELAPSED_TIME_LM_2=$(($SECONDS - $START_TIME_LM_1))
 
 ###########
 # Running transformer with fused LM
@@ -72,6 +74,8 @@ USE_EARLY_STOPPING=True
 EARLY_STOPPING_LAST_N=10
 WARM_UP_NUM_EPOCHS=25
 
+
+START_TIME_TRANS_TR=$SECONDS
 # Training the model
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
             --data_path="$DATA_PATH" \
@@ -86,7 +90,10 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NA
             --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz" \
             --warm_up_num_epochs="$WARM_UP_NUM_EPOCHS"
 
+ELAPSED_TIME_TRANS_TR=$(($SECONDS - $START_TIME_TRANS_TR))
 # Running the model
+
+START_TIME_TRANS_INF=$SECONDS
 PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME" \
             --data_path="$DATA_PATH" \
             --model_path="$PROJECT_DIR/trained_models/$MODEL_NAME/model.npz" \
@@ -96,7 +103,15 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME
             --batch_size_for_inference="$BATCH_SIZE_FOR_INFERENCE" \
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz"
 
+ELAPSED_TIME_TRANS_INF=$(($SECONDS - $START_TIME_TRANS_INF))
 
+echo "$ELAPSED_TIME_LM_1"
+echo "$ELAPSED_TIME_LM_2"
+echo "$ELAPSED_TIME_TRANS_TR"
+echo "$ELAPSED_TIME_TRANS_INF"
+
+(echo "$ELAPSED_TIME_LM_1"; echo "$ELAPSED_TIME_LM_2";
+echo "$ELAPSED_TIME_TRANS_TR"; echo "$ELAPSED_TIME_TRANS_INF") > "$PROJECT_DIR/trained_models/elapsed_time.log"
 ##cat $DATA_PATH/output.tok.txt | $mosesdecoder/scripts/tokenizer/detokenizer.perl > $OUTPUT_DATA_PATH/output.txt
 
 #python3.6 final_fix.py $DATA_PATH/output.tok.txt $OUTPUT_DATA_PATH/output.txt
