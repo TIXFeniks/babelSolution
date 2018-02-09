@@ -45,7 +45,7 @@ def train_model(model_name, config):
     #gpu_options = create_gpu_options(config)
 
     # Skipping check stage of the submission
-    if len(src_train) < 1000: config['max_epochs'] = 1
+    #if len(src_train) < 1000: config['max_epochs'] = 1
 
     #with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     with tf.Session() as sess:
