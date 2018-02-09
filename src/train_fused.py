@@ -109,39 +109,39 @@ def train_model(model_name, config):
 
         initialize_uninitialized_variables(sess)
 
-        assigns = []
-        weights_by_common_name = {w.name[len(model_name)+1:]: w for w in weights}
-        if config.get('target_lm_path'):
-            with np.load(config.get('target_lm_path')) as dic:
-                for key in dic: # decoder_init
-                    print(key)
-                    w_lm = dic[key]
-                    weights_key = '/'.join(key.split('/')[1:]).replace('main/','').replace("enc",'dec').replace("inp","out")
-                    if "emb_out_bias" in weights_key: # no such thing
-                        continue
-
-                    w_var = weights_by_common_name[weights_key]
-
-                    all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
-
-                    assigns.append(tf.assign(w_var,w_lm))
-        else:
-            raise ValueError("Must specify LM path!")
-        if config.get('src_lm_path'):
-            with np.load(config.get("src_lm_path")) as dic:
-                for key in dic: # encoder_init
-                    w_lm = dic[key]
-                    print(key)
-                    weights_key = '/'.join(key.split('/')[1:]).replace('main/','')
-                    if "logits" in weights_key: # encoder has no 'logits' layer for the logits to be initialised
-                        continue
-                    w_var = weights_by_common_name[weights_key]
-
-                    all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
-                    assigns.append(tf.assign(w_var,w_lm))
-        else:
-            raise ValueError("Must specify LM path!")
-        sess.run(assigns)
+        # assigns = []
+        # weights_by_common_name = {w.name[len(model_name)+1:]: w for w in weights}
+        # if config.get('target_lm_path'):
+        #     with np.load(config.get('target_lm_path')) as dic:
+        #         for key in dic: # decoder_init
+        #             print(key)
+        #             w_lm = dic[key]
+        #             weights_key = '/'.join(key.split('/')[1:]).replace('main/','').replace("enc",'dec').replace("inp","out")
+        #             if "emb_out_bias" in weights_key: # no such thing
+        #                 continue
+        #
+        #             w_var = weights_by_common_name[weights_key]
+        #
+        #             all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
+        #
+        #             assigns.append(tf.assign(w_var,w_lm))
+        # else:
+        #     raise ValueError("Must specify LM path!")
+        # if config.get('src_lm_path'):
+        #     with np.load(config.get("src_lm_path")) as dic:
+        #         for key in dic: # encoder_init
+        #             w_lm = dic[key]
+        #             print(key)
+        #             weights_key = '/'.join(key.split('/')[1:]).replace('main/','')
+        #             if "logits" in weights_key: # encoder has no 'logits' layer for the logits to be initialised
+        #                 continue
+        #             w_var = weights_by_common_name[weights_key]
+        #
+        #             all_shapes_equal(w_lm, w_var, session=sess, mode= 'assert')
+        #             assigns.append(tf.assign(w_var,w_lm))
+        # else:
+        #     raise ValueError("Must specify LM path!")
+        # sess.run(assigns)
 
         batch_size = hp.get('batch_size', 32)
         epoch = 0
