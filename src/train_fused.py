@@ -49,20 +49,8 @@ def train_model(model_name, config):
 
     #with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     with tf.Session() as sess:
-        lm = TransformerLM('lm2', out_voc, **hp)
-        if config.get('target_lm_path'):
-            lm_weights = np.load(config.get('target_lm_path'))
-            ops = []
-            for w in tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, lm.name):
-                if w.name in lm_weights:
-                    ops.append(tf.assign(w, lm_weights[w.name]))
-                else:
-                    print(w.name, 'not initialized')
-
-            sess.run(ops);
-        else:
-            raise ValueError("Must specify LM path!")
-        model = Model(model_name, inp_voc, out_voc, lm, **hp)
+       
+        model = Model(model_name, inp_voc, out_voc, **hp)
 
         inp = tf.placeholder(tf.int32, [None, None])
         out = tf.placeholder(tf.int32, [None, None])

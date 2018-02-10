@@ -19,13 +19,13 @@ class Model(TranslateModel):
     DecState = namedtuple("transformer_state", ['enc_out', 'enc_attn_mask', 'attnP', 'rdo', 'out_seq', 'offset',
                                                 'emb', 'dec_layers', 'dec_enc_kv', 'dec_dec_kv'])
 
-    def __init__(self, name, inp_voc, out_voc, lm, gate_hid_size=None, **hp):
+    def __init__(self, name, inp_voc, out_voc, gate_hid_size=None, **hp):
         self.name = name
         self.inp_voc = inp_voc
         self.out_voc = out_voc
         self.hp = hp
         self.debug = hp.get('debug', None)
-        self.lm = lm
+        #self.lm = lm
 
         # Parameters
         self.transformer = Transformer(name, inp_voc, out_voc, **hp)
@@ -193,9 +193,10 @@ class Model(TranslateModel):
 
     def get_logits(self, dec_state, **flags):
         trans_logits = self.logits(dec_state.rdo)
-        lm_logits = self.lm(dec_state.out_seq, is_train=False, after_eos=True)[:, -1]
-        assert trans_logits.shape.ndims == lm_logits.shape.ndims == 2
+        #lm_logits = self.lm(dec_state.out_seq, is_train=False, after_eos=True)[:, -1]
+        #assert trans_logits.shape.ndims == lm_logits.shape.ndims == 2
 
-        gates = self.gate_out(self.gate_hid(dec_state.rdo))
-        trans_gate, lm_gate = tf.unstack(gates[..., None], axis=-2)
-        return trans_logits * trans_gate + lm_logits * lm_gate
+        #gates = self.gate_out(self.gate_hid(dec_state.rdo))
+        #trans_gate, lm_gate = tf.unstack(gates[..., None], axis=-2)
+        #return trans_logits * trans_gate + lm_logits * lm_gate
+        return trans_logits
