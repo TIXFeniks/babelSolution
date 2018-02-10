@@ -92,9 +92,10 @@ PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NA
             --early_stopping_last_n="$EARLY_STOPPING_LAST_N" \
             --max_epochs="$MAX_EPOCHS" \
             --validate_every_epoch="$SHOULD_VALIDATE_EVERY_EPOCH" \
+            --warm_up_num_epochs="$WARM_UP_NUM_EPOCHS" \
             --target_lm_path="$PROJECT_DIR/trained_models/lm2/model.npz" \
-            --src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz" \
-            --warm_up_num_epochs="$WARM_UP_NUM_EPOCHS"
+            #--src_lm_path="$PROJECT_DIR/trained_models/lm1/model.npz" \
+
 
 ELAPSED_TIME_TRANS_TR=$(($SECONDS - $START_TIME_TRANS_TR))
 # Running the model
