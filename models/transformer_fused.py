@@ -60,11 +60,12 @@ class Model(TranslateModel):
         rdo = self.transformer.decode(out, out_len, out_reverse, enc_out, enc_attn_mask, is_train)
 
         trans_logits = self.logits(rdo)
-        lm_logits = self.lm(out, is_train=False)
+        # lm_logits = self.lm(out, is_train=False)
 
-        gates = self.gate_out(self.gate_hid(rdo))
-        trans_gate, lm_gate = tf.unstack(gates[..., None], axis=-2)
-        return trans_logits * trans_gate + lm_logits * lm_gate
+        # gates = self.gate_out(self.gate_hid(rdo))
+        # trans_gate, lm_gate = tf.unstack(gates[..., None], axis=-2)
+        # return trans_logits * trans_gate + lm_logits * lm_gate
+        return trans_logits
 
 
     def encode(self, batch, is_train=False, **kwargs):
