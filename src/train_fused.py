@@ -192,9 +192,9 @@ def train_model(model_name, config):
                 should_continue = False
 
             if config.get('warm_up_num_epochs') > epoch:
-                return True, val_score
+                return True
             else:
-                return should_continue, val_score
+                return should_continue
 
         while should_start_next_epoch:
             batches = batch_generator_over_dataset(src_train, dst_train, batch_size, batches_per_epoch=None)
