@@ -5,7 +5,7 @@ INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
 PROJECT_DIR="./"
 
-GPU_FR=0.5
+GPU_FR=0.45
 
 if [ -z "$2" ]; then
     TRAIN_LM=true
