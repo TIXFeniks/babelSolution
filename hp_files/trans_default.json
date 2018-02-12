@@ -11,7 +11,7 @@
     "res_steps": "nlda",
     "normalize_out": true,
     "force_bos": true,
-    "batch_size": 32,
+    "batch_size": 16,
     "len_alpha": 0.9,
     "beam_size": 3
 }
