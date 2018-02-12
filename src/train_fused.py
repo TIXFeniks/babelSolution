@@ -42,13 +42,13 @@ def train_model(model_name, config):
 
     # Hyperparameters
     hp = json.load(open(config.get('hp_file_path'), 'r', encoding='utf-8')) if config.get('hp_file_path') else {}
-    #gpu_options = create_gpu_options(config)
+    gpu_options = create_gpu_options(config)
 
     # Skipping check stage of the submission
     #if len(src_train) < 1000: config['max_epochs'] = 1
 
-    #with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-    with tf.Session() as sess:
+    with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+    #with tf.Session() as sess:
         lm = TransformerLM('lm2', out_voc, **hp)
         if config.get('target_lm_path'):
             lm_weights = np.load(config.get('target_lm_path'))
