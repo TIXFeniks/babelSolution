@@ -40,7 +40,7 @@ class GreedyInference:
 
         """
 
-        print("Preparing GREEDY translate with params:", locals())
+        #print("Preparing GREEDY translate with params:", locals())
         self.batch_placeholder = batch_placeholder
         self.get_tracked_outputs = get_tracked_outputs
 
