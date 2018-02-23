@@ -48,7 +48,7 @@ if [ "$TRAIN_LM" = true ]; then
 
     START_TIME_LM_1=$SECONDS
     # Running the model
-    PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
+    PYTHONPATH="$PROJECT_DIR" python "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
                 --data_path="$DATA_PATH" \
                 --hp_file_path="$HP_FILE_PATH" \
                 --lang="$LANG" \
@@ -66,7 +66,7 @@ if [ "$TRAIN_LM" = true ]; then
     MAX_EPOCHS=1
     START_TIME_LM_2=$SECONDS
     # Running the model
-    PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
+    PYTHONPATH="$PROJECT_DIR" python "$PROJECT_DIR/src/train_lm.py" "$MODEL_NAME" \
                 --data_path="$DATA_PATH" \
                 --hp_file_path="$HP_FILE_PATH" \
                 --lang="$LANG" \
@@ -92,7 +92,7 @@ WARM_UP_NUM_EPOCHS=5
 START_TIME_TRANS_TR=$SECONDS
 # Training the model
 if [ "$TRAIN_TR" = true ]; then
-    PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
+    PYTHONPATH="$PROJECT_DIR" python "$PROJECT_DIR/src/train_fused.py" "$MODEL_NAME" \
                 --data_path="$DATA_PATH" \
                 --hp_file_path="$HP_FILE_PATH" \
                 --max_time_seconds="$MAX_TIME_SECONDS" \
@@ -111,7 +111,7 @@ ELAPSED_TIME_TRANS_TR=$(($SECONDS - $START_TIME_TRANS_TR))
 # Running the model
 
 START_TIME_TRANS_INF=$SECONDS
-PYTHONPATH="$PROJECT_DIR" python3.6 "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME" \
+PYTHONPATH="$PROJECT_DIR" python "$PROJECT_DIR/src/run_fused.py" "$MODEL_NAME" \
             --data_path="$DATA_PATH" \
             --model_path="$PROJECT_DIR/trained_models/$MODEL_NAME/model.npz" \
             --input_path="$DATA_PATH/bpe_input.txt" \
