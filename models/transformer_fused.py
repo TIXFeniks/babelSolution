@@ -45,7 +45,7 @@ class Model(TranslateModel):
                                   activation=tf.nn.relu)
 
             self.gate_out = Dense('gate_out',
-                                  self.gate_hid_size, 2,
+                                  self.gate_hid_size, 1,
                                   activation=tf.nn.sigmoid)
 
     # Train interface
@@ -62,9 +62,8 @@ class Model(TranslateModel):
         trans_logits = self.logits(rdo)
         lm_logits = self.lm(out, is_train=False)
 
-        gates = self.gate_out(self.gate_hid(rdo))
-        trans_gate, lm_gate = tf.unstack(gates[..., None], axis=-2)
-        return trans_logits * trans_gate + lm_logits * lm_gate
+        gate = self.gate_out(self.gate_hid(rdo))
+        return trans_logits * gate + lm_logits * (1 - gate)
 
 
     def encode(self, batch, is_train=False, **kwargs):
@@ -195,6 +194,5 @@ class Model(TranslateModel):
         lm_logits = self.lm(dec_state.out_seq, is_train=False, after_eos=True)[:, -1]
         assert trans_logits.shape.ndims == lm_logits.shape.ndims == 2
 
-        gates = self.gate_out(self.gate_hid(dec_state.rdo))
-        trans_gate, lm_gate = tf.unstack(gates[..., None], axis=-2)
-        return trans_logits * trans_gate + lm_logits * lm_gate
+        gate = self.gate_out(self.gate_hid(dec_state.rdo))
+        return trans_logits * gate + lm_logits * (1-gate)

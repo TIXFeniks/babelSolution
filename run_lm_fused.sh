@@ -3,7 +3,7 @@
 DATA_PATH="$1"
 INPUT_DATA_PATH="/data"
 OUTPUT_DATA_PATH="/output"
-PROJECT_DIR="./"
+PROJECT_DIR="."
 
 GPU_FR=0.45
 
